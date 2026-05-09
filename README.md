@@ -10,23 +10,26 @@ ralph loop 전용 하네스를 찍어내는 **공장(factory)**.
 ```bash
 # 1) 새 하네스 만들기 — ~/jinsup_ralph/<name>/ 로 복제 + git init 자동
 bash scripts/new-harness.sh my-feature
+# (Claude Code 세션 안이면 /ralph-new my-feature 도 동일 동작)
 
-# 2) 그 위치로 이동
+# 2) 그 위치로 이동 + 새 Claude 세션 (.claude/ 가 그 디렉터리 기준으로 로드되도록)
 cd ~/jinsup_ralph/my-feature
+claude
 
 # 3) 도메인 채우기
-#    - .claude/scripts/{deploy,smoke-test}.sh   ← 배포·스모크 명령
+#    - CLAUDE.md "도메인" 섹션                  ← 무엇/입력/산출물/사이클·프로젝트 종료 조건
 #    - .claude/config/verify-checklist.md       ← 도메인 검증 항목
-#    - CLAUDE.md "도메인" 섹션                  ← 무엇/입력/산출물/종료조건
+#    - .claude/scripts/{deploy,smoke-test}.sh   ← 첫 사이클이 자기 손으로 채워도 무방
 
-# 4) 첫 그린 라이트
-/ralph-deploy
+# 4) 자율 루프 시작 (메인 경로) — ralph-tick 을 주기 invoke
+/loop 1m /ralph-tick
+#   (또는 ralph-loop 플러그인 활성화돼 있으면 /ralph-loop:ralph-loop)
+#   (수동으로 한 스텝씩 보고 싶으면 그냥 /ralph-tick 만 반복 호출)
 
-# 5) 첫 사이클 시작
-/ralph-cycle-start
+# 5) SPEC 동결 시점에 사람이 한 번 통과시킴
+#    agent 가 spec.md 를 작성하면 phase=IMPLEMENT_PENDING_FREEZE 에서 멈춤
+#    검토 후 /ralph-spec-done 호출 → IMPLEMENT 로 진입
 ```
-
-Claude Code 세션 안에서는 메타 슬래시로도 가능: `/ralph-new my-feature`.
 
 ---
 
@@ -101,12 +104,20 @@ Eject 결과:
 
 ## 슬래시 커맨드 (각 하네스 안에서)
 
+**메인 경로 (자율 구동)**
+```
+/loop 1m /ralph-tick        # 메인 — ralph-tick 을 1분마다 반복. 매 tick = 1 step 전진
+/ralph-tick                 # 한 번만 1 step 전진 (수동 관찰용)
+/ralph-spec-done            # 사람이 SPEC 동결 인가 — 자율 진행이 여기서만 멈춤
+/ralph-stop                 # 프로젝트 강제 종료
+```
+
+**수동 override (자율 일시정지하고 사람이 끼어들 때)**
 ```
 /ralph-deploy            # 첫 그린 라이트 (smoke deploy)
-/ralph-cycle-start       # 새 사이클 시작 → RESEARCH
+/ralph-cycle-start       # 새 사이클 수동 시작 → RESEARCH
 /ralph-research-done     # RESEARCH → IDEATION
 /ralph-ideation-done     # IDEATION → SPEC
-/ralph-spec-done         # SPEC 동결 → IMPLEMENT
 /ralph-start             # dev/* 플래너 호출 → 구현
 /ralph-done              # QA → review-council → gap-analysis → CHECKLIST → CYCLE_DONE
 /ralph-verify            # 수동 체크리스트 단독 실행

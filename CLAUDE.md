@@ -18,6 +18,15 @@ Claude Code 로 이 프로젝트를 실행해서 랄프로 진행되는 프로�
 
 원칙은 문서로만 존재하면 안 된다. `.claude/agents`, `.claude/skills`, `.claude/hooks`, `.claude/commands` 로 코드/설정에 박혀서 사람·에이전트의 의지와 무관하게 강제되어야 한다.
 
+### 운영 가정 — ralph-loop 자율 구동
+
+이 하네스는 **`ralph-loop` 플러그인이 돌린다는 가정**으로 설계되어 있다. 즉 사람이 매번 슬래시 커맨드를 치는 manual 모델이 아니라, ralph-loop 가 정해진 entry 를 반복 invoke 하면 agent 가 자율로 한 스텝씩 전진한다.
+
+- **메인 경로**: `ralph-tick` (`.claude/commands/ralph-tick.md` + 동일 이름 스킬). ralph-loop 가 매 iteration 마다 호출. tick 1회 = 현재 phase 1 step + gate-verify + status 갱신 후 exit.
+- **수동 override**: `/ralph-research-done`, `/ralph-spec-done`, `/ralph-done` 등 기존 게이트 커맨드. 사람이 끼고 싶을 때만 사용 (예: 자율 진행 일시정지 후 검토).
+- **사람 개입 강제 지점**: SPEC 동결만 사람이 인가한다. agent 가 spec.md 를 작성해도, `state/spec-frozen.flag` 가 없으면 IMPLEMENT 로 자동 진입하지 않는다. 동결은 사람이 명시적으로 `/ralph-spec-done` 또는 flag 파일 생성.
+- 정지: 비용/가치 cap 충족 시 `project-stop-check` 가 `phase=PROJECT_DONE` 으로 굳히고 ralph-loop 도 cancel 안내. 사용자 명시 정지는 `/ralph-stop` 또는 `ralph-loop:cancel-ralph`.
+
 ### 동기 (왜 이 모양인가)
 
 이 하네스의 사용자는 **개발자**다. 개발자는 기획/디자인/마케팅/QA 시야가 모자란 경우가 많고, 이를 보완하지 않으면 ralph 가 만든 산출물은 한 쪽으로 기울어 있다.

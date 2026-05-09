@@ -18,6 +18,17 @@
 
 ---
 
+## 운영 가정 — ralph-loop 자율 구동
+
+이 하네스는 **`ralph-loop` 플러그인이 반복 invoke 한다는 가정**으로 설계됐다. 사람이 매 게이트마다 슬래시 커맨드를 치는 manual 모델이 아니다.
+
+- **메인 entry**: `/ralph-tick` (= ralph-tick 스킬). ralph-loop 가 매 iteration 마다 호출. tick 1회 = 현재 phase 1 step + gate-verify + status 갱신 후 exit. 다음 tick 이 다음 step.
+- **수동 override**: `/ralph-research-done`, `/ralph-ideation-done`, `/ralph-spec-done`, `/ralph-done` 등은 사람이 자율 진행을 일시 끊고 들어올 때만 사용.
+- **사람 강제 인가 지점**: SPEC 동결. agent 가 `state/cycles/<N>/spec.md` 를 작성해도, `state/cycles/<N>/spec-frozen.flag` 가 없으면 IMPLEMENT 로 진입하지 않는다 (다음 tick 도 SPEC 페이즈에 머물며 spec 보강만 반복). 사람이 검토 후 flag 생성하거나 `/ralph-spec-done` 호출.
+- **정지**: `project-stop-check` 가 STOP 판정 → `phase=PROJECT_DONE` → tick 이 noop 으로 종료, ralph-loop 도 자동 cancel 권고. 명시 정지: `/ralph-stop` 또는 `ralph-loop:cancel-ralph`.
+
+---
+
 ## 사용자 동기
 
 이 하네스의 운전자는 **개발자**다. 기획/디자인/마케팅/QA 시야를 시스템이 강제로 끌어들여야 한 쪽으로 기울지 않는다.
