@@ -1,0 +1,32 @@
+# macOS
+.DS_Store
+
+# OS / editor
+.idea/
+*.swp
+*.swo
+*~
+
+# logs / temp
+*.log
+*.tmp
+
+# env / secrets
+.env
+.env.*
+!.env.example
+
+# python (template/하네스 작업 중 임시 가능)
+__pycache__/
+*.pyc
+.venv/
+.uv/
+
+# node (template/하네스 작업 중 임시 가능)
+node_modules/
+.npm/
+.pnpm-store/
+
+# handoff (세션 간 임시 메모, 커밋 대상 아님)
+HANDOFF.md
+

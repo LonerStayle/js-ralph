@@ -26,10 +26,13 @@ description: 개발자 "다 만들었다" 선언. QA → review-council → gap-
 
 `verify-loop-output` 스킬 호출 (체크리스트 기반 객관 채점). 출력: `last-failures.md`.
 - FAIL → status=FIXING_CHECK, **종료**. fix 후 `/ralph-done` 재호출.
-- PASS → status=CYCLE_DONE, `cycles/<N>/done.md` 작성.
+- PASS → status=CYCLE_DONE, `cycles/<N>/done.md` 작성, **다음 단계 자동 진행**.
 
-## CYCLE_DONE 후
+## Step 5 — project-stop-check (CYCLE_DONE 직후 자동)
 
-사용자에게 안내:
-- 다음 사이클을 시작하려면 `/ralph-cycle-start`.
-- 종료하려면 그대로 둠 (status 는 CYCLE_DONE 유지).
+`project-stop-check` 스킬 호출. CLAUDE.md "프로젝트 종료 조건" 을 누적 산출물과 대조.
+
+- STOP 판정 → status=PROJECT_DONE. 사용자에게 종료 안내. `/ralph-cycle-start` 차단.
+- CONTINUE 판정 → status=CYCLE_DONE 유지. 사용자에게 `/ralph-cycle-start` 로 다음 사이클 시작 안내.
+
+수동 강제 종료가 필요하면 `/ralph-stop`.

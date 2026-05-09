@@ -10,7 +10,11 @@
 - 무엇을 자동화하는가: TODO
 - 입력: TODO
 - 산출물: TODO
-- 종료 조건 (DONE 정의): TODO
+- **사이클 종료 조건** (한 사이클의 spec acceptance — 매 사이클마다 다름): TODO
+- **프로젝트 종료 조건 (STOP)** — 정량 기준, 충족 시 ralph 가 새 사이클 진입을 차단:
+  - 비용 cap (예: cycles ≤ N)
+  - 가치 cap (예: 핵심 지표 X ≥ 임계값 Y, T일 연속 유지)
+  - 예외 cap (사용자 명시적 `/ralph-stop`)
 
 ---
 
@@ -79,7 +83,11 @@ ralph 는 단일 루프가 아니라 **외부(사이클) + 내부(구현/검증)
   │      └ no gaps
   │  8. CHECKLIST            (verify-loop-output, 객관)
   │      ├ FAIL   → state/.../last-failures.md → 4
-  │      └ PASS   → CYCLE_DONE ─► [Cycle N+1] /ralph-cycle-start
+  │      └ PASS   → CYCLE_DONE
+  │                   ↓
+  │              project-stop-check (CLAUDE.md "프로젝트 종료 조건" 자동 채점)
+  │                   ├ STOP   → status=PROJECT_DONE, /ralph-cycle-start 차단
+  │                   └ 미달   → /ralph-cycle-start 로 다음 사이클 진입 가능
 ```
 
 **모든 게이트의 공통 검증 (`gate-verify`)**
