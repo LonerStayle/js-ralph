@@ -1,11 +1,16 @@
 ---
-description: ralph 자율 루프 한 방 시작. /loop /ralph-tick 의 단축형. 모델 자가 페이싱으로 매 iteration 마다 ralph-tick 1 step 전진.
+description: ralph 자율 사이클 시작 (한 단어). ralph-loop 플러그인의 setup 스크립트를 직접 bash 호출 — 슬래시 커맨드 wrapper 가 아니라 setup 단계만 그대로 재현해서 권한 모델과 충돌 없음. Stop hook 은 플러그인이 이미 등록해둔 그대로 활성.
+allowed-tools: ["Bash(bash ~/.claude/plugins/cache/claude-plugins-official/ralph-loop/*/scripts/setup-ralph-loop.sh:*)"]
 ---
 
-`loop` 스킬을 사용해 `/ralph-tick` 을 반복 호출한다.
+ralph-loop 플러그인의 setup-ralph-loop.sh 를 직접 호출해 자율 루프 활성화.
 
-- 인터벌은 지정하지 않는다 (모델 자가 페이싱 — 한 tick 끝난 다음 자연스럽게 다음 tick).
-- 사용자가 명시 중단하기 전까지 자동으로 사이클을 돌린다.
-- 중단: `ralph-loop:cancel-ralph` 또는 `/loop` 다시 호출로 취소.
-- `IMPLEMENT_PENDING_FREEZE` 에서 `spec-auto-freeze.flag` 가 있으면 자동 통과, 없으면 noop 으로 사람 대기.
-- `PROJECT_DONE` 도달 시 tick 이 noop 만 반복 — 그 시점에서 사용자가 cancel.
+```!
+bash ~/.claude/plugins/cache/claude-plugins-official/ralph-loop/*/scripts/setup-ralph-loop.sh "ralph-tick 스킬에 따라 현재 phase 의 1 step 만 진행. 절차: (1) .claude/state/ralph-status.md 의 cycle/phase 읽기 (2) ralph-tick 디스패치 표대로 정확히 1 step (두 step 묶음 금지) (3) gate-verify 해당 시 실행 (4) status 갱신 + ralph-history.md append (5) PROJECT_DONE 도달 시에만 마지막 줄에 정확히 <promise>PROJECT_DONE</promise> 출력. 거짓 promise 금지. spec-auto-freeze.flag 없이 IMPLEMENT_PENDING_FREEZE 면 noop. STUCK_<phase> 면 noop." --completion-promise "PROJECT_DONE" --max-iterations 300
+```
+
+setup 스크립트가 끝나면:
+- `.claude/ralph-loop.local.md` 생성됨 (state file)
+- ralph-loop 플러그인의 Stop hook 이 다음 종료 시도부터 자동 가로채서 같은 prompt 재투입
+- `<promise>PROJECT_DONE</promise>` 또는 max-iterations 도달까지 끊김 없음
+- 중단: `/cancel-ralph`

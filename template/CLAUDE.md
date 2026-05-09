@@ -11,21 +11,27 @@
 - 입력: TODO
 - 산출물: TODO
 - **사이클 종료 조건** (한 사이클의 spec acceptance — 매 사이클마다 다름): TODO
-- **프로젝트 종료 조건 (STOP)** — 정량 기준, 충족 시 ralph 가 새 사이클 진입을 차단:
+- **프로젝트 종료 조건 (STOP)** — 정량 기준, 충족 시 ralph 가 새 사이클 진입을 차단. **반드시 agent 자율로 검증 가능한 기준으로 잡는다** (DAU·전환율 같은 실사용자 데이터 의존 금지 — ralph 는 코드를 만들 뿐 사용자를 데려올 수 없음):
   - 비용 cap (예: cycles ≤ N)
-  - 가치 cap (예: 핵심 지표 X ≥ 임계값 Y, T일 연속 유지)
+  - 가치 cap — **build phase 의 코드/기능 완성도** 로 측정 가능한 기준만:
+    - 예: "AC-1 ~ AC-N 모두 통과", "외부 어댑터 ≥ 3개 구현", "e2e 시뮬레이션 시나리오 통과", "자동화 작업이 컨테이너 cron 으로 1회 이상 실행 성공"
+    - 금지: DAU/MAU/전환율/리텐션/만족도 같은 실사용자 행동 의존 메트릭 (이건 STOP 이후 별도 운영 단계에서 측정)
   - 예외 cap (사용자 명시적 `/ralph-stop`)
 
 ---
 
-## 운영 가정 — ralph-loop 자율 구동
+## 운영 가정 — ralph-loop 자율 구동 (Stop-hook 기반)
 
-이 하네스는 **`ralph-loop` 플러그인이 반복 invoke 한다는 가정**으로 설계됐다. 사람이 매 게이트마다 슬래시 커맨드를 치는 manual 모델이 아니다.
+이 하네스는 **`ralph-loop` 플러그인 (Geoffrey Huntley 의 Ralph Wiggum 기법)** 위에서 돈다. `/loop` 같은 외부 스케줄러가 아니라, **Claude Code 의 Stop hook 이 세션 종료를 가로채서 동일 prompt 를 즉시 다시 feed back** 하는 self-referential 루프. 끊김 없이 빠르고, 각 iteration 이 자기가 만든 파일/상태를 보고 누적 개선.
 
-- **메인 entry**: `/ralph-tick` (= ralph-tick 스킬). ralph-loop 가 매 iteration 마다 호출. tick 1회 = 현재 phase 1 step + gate-verify + status 갱신 후 exit. 다음 tick 이 다음 step.
-- **수동 override**: `/ralph-research-done`, `/ralph-ideation-done`, `/ralph-spec-done`, `/ralph-done` 등은 사람이 자율 진행을 일시 끊고 들어올 때만 사용.
-- **사람 강제 인가 지점**: SPEC 동결. agent 가 `state/cycles/<N>/spec.md` 를 작성해도, `state/cycles/<N>/spec-frozen.flag` 가 없으면 IMPLEMENT 로 진입하지 않는다 (다음 tick 도 SPEC 페이즈에 머물며 spec 보강만 반복). 사람이 검토 후 flag 생성하거나 `/ralph-spec-done` 호출.
-- **정지**: `project-stop-check` 가 STOP 판정 → `phase=PROJECT_DONE` → tick 이 noop 으로 종료, ralph-loop 도 자동 cancel 권고. 명시 정지: `/ralph-stop` 또는 `ralph-loop:cancel-ralph`.
+- **메인 entry**: `/ralph-run` — 내부적으로 `/ralph-loop "<tick prompt>" --completion-promise "PROJECT_DONE" --max-iterations 300` 호출.
+- **매 iteration**: ralph-tick 스킬 1회 적용 (현재 phase 1 step + gate-verify + status 갱신). 종료 시도 → Stop hook 이 같은 prompt 재투입 → 다음 iteration. 이게 "tick".
+- **종료 트리거**:
+  - `<promise>PROJECT_DONE</promise>` 출력 (status.phase=PROJECT_DONE 도달 시에만 — agent 거짓 출력 금지)
+  - `--max-iterations 300` 도달
+  - 사용자 명시 `/cancel-ralph`
+- **사람 강제 인가 지점**: SPEC 동결만. `spec-frozen.flag` 없으면 IMPLEMENT 진입 안 함 (`IMPLEMENT_PENDING_FREEZE` 에서 noop 반복). `spec-auto-freeze.flag` 있으면 자동 통과.
+- **수동 override**: `/ralph-tick` (한 번만 1 step), `/ralph-spec-done` (수동 인가), `/ralph-stop` (PROJECT_DONE 으로 굳히기).
 
 ---
 

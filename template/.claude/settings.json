@@ -40,7 +40,12 @@
       "Bash(tail:*)",
       "Bash(wc:*)",
       "Bash(alembic:*)",
-      "Bash(echo:*)"
+      "Bash(echo:*)",
+      "Edit(.claude/state/**)",
+      "Write(.claude/state/**)",
+      "Edit(.claude/config/**)",
+      "Write(.claude/config/**)",
+      "Bash(bash ~/.claude/plugins/cache/claude-plugins-official/ralph-loop/*/scripts/setup-ralph-loop.sh:*)"
     ],
     "ask": [
       "Bash(sudo:*)",
@@ -62,7 +67,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "bash .claude/hooks/append-history.sh"
+            "command": "bash \"${CLAUDE_PROJECT_DIR:-.}/.claude/hooks/append-history.sh\""
           }
         ]
       }
@@ -73,7 +78,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "bash .claude/hooks/run-verify.sh"
+            "command": "bash \"${CLAUDE_PROJECT_DIR:-.}/.claude/hooks/run-verify.sh\""
           }
         ]
       }

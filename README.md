@@ -5,31 +5,77 @@ ralph loop 전용 하네스를 찍어내는 **공장(factory)**.
 
 ---
 
-## 빠른 시작
+## 사전 준비
+
+이 하네스는 [`ralph-loop` 플러그인](https://github.com/anthropics/claude-plugins-official) 위에서 동작합니다. Claude Code 에서 미리 활성화되어 있어야 합니다.
 
 ```bash
-# 1) 새 하네스 만들기 — ~/jinsup_ralph/<name>/ 로 복제 + git init 자동
-bash scripts/new-harness.sh my-feature
-# (Claude Code 세션 안이면 /ralph-new my-feature 도 동일 동작)
-
-# 2) 그 위치로 이동 + 새 Claude 세션 (.claude/ 가 그 디렉터리 기준으로 로드되도록)
-cd ~/jinsup_ralph/my-feature
-claude
-
-# 3) 도메인 채우기
-#    - CLAUDE.md "도메인" 섹션                  ← 무엇/입력/산출물/사이클·프로젝트 종료 조건
-#    - .claude/config/verify-checklist.md       ← 도메인 검증 항목
-#    - .claude/scripts/{deploy,smoke-test}.sh   ← 첫 사이클이 자기 손으로 채워도 무방
-
-# 4) 자율 루프 시작 (메인 경로, 한 단어)
-/ralph-run
-#   내부적으로 /loop /ralph-tick 자가-페이싱
-#   수동 한 스텝: /ralph-tick
-
-# 5) SPEC 동결 시점에 사람이 한 번 통과시킴
-#    agent 가 spec.md 를 작성하면 phase=IMPLEMENT_PENDING_FREEZE 에서 멈춤
-#    검토 후 /ralph-spec-done 호출 → IMPLEMENT 로 진입
+# 활성화 확인 — 출력에 'ralph-loop' 가 보이면 OK
+ls ~/.claude/plugins/cache/claude-plugins-official/ralph-loop/ 2>/dev/null
 ```
+
+---
+
+## 빠른 시작
+
+### 1단계 — 새 하네스 만들기
+
+```bash
+# template/ 을 ~/jinsup_ralph/<name>/ 로 복제 + git init 자동 + 초기 커밋
+bash scripts/new-harness.sh my-feature
+```
+
+(Claude Code 세션 안이면 `/ralph-new my-feature` 도 동일 동작)
+
+### 2단계 — 그 위치로 이동, 새 Claude 세션
+
+```bash
+cd ~/jinsup_ralph/my-feature
+claude    # 새 세션 — .claude/ 가 이 디렉터리 기준으로 로드됨
+```
+
+### 3단계 — 도메인 한 번만 채움 (이게 사람이 하는 거의 전부)
+
+세션 안에서 이 3개만 손봐주면 충분합니다 (나머진 ralph 가 알아서):
+
+| 파일 | 무엇을 적나 |
+|------|-------------|
+| `CLAUDE.md` 의 "도메인" 섹션 | 무엇을 자동화 / 입력 / 산출물 / **사이클 종료 조건 + 프로젝트 종료 조건** |
+| `.claude/config/verify-checklist.md` | 도메인 검증 항목 (이번 사이클에 무엇이 통과해야 하는지) |
+| `.claude/scripts/{deploy,smoke-test}.sh` | 빈 stub 그대로 둬도 됨 — 첫 사이클이 spec 따라 자기 손으로 채움 |
+
+### 4단계 — 자율 루프 시작 (한 단어)
+
+```
+/ralph-run
+```
+
+뒤에서 일어나는 일:
+1. `ralph-loop` 플러그인의 `setup-ralph-loop.sh` 가 호출되어 `.claude/ralph-loop.local.md` 생성
+2. **Stop hook** 이 활성화 — 이후 agent 가 종료 시도할 때마다 같은 prompt 를 즉시 재투입 (self-referential 루프)
+3. 매 iteration = `ralph-tick` 1 step (현재 phase 작업 1회 + gate-verify + status 갱신)
+4. 끊김 없이 빠른 iteration. RESEARCH → IDEATION → SPEC → IMPLEMENT → QA → COUNCIL → GAP → CHECKLIST → CYCLE_DONE → 다음 사이클...
+
+### 5단계 — SPEC 동결만 사람이 인가 (auto-freeze 안 쓸 때)
+
+agent 가 `state/cycles/<N>/spec.md` 를 작성하면 phase 가 `IMPLEMENT_PENDING_FREEZE` 에서 멈춤. spec 검토 후:
+
+```
+/ralph-spec-done
+```
+
+→ `spec-frozen.flag` 생성 → IMPLEMENT 로 진입.
+
+**자율 모드** 로 가려면 새 하네스 만든 직후 한 번:
+```bash
+echo "auto-freeze enabled" > .claude/config/spec-auto-freeze.flag
+```
+이러면 SPEC 게이트도 자동 통과해서 사람 개입 0.
+
+### 종료
+
+자동: `<promise>PROJECT_DONE</promise>` 출력 (실제 PROJECT_DONE 도달 시), 또는 max-iterations 300 도달
+수동: `/cancel-ralph` (ralph-loop 중단), `/ralph-stop` (PROJECT_DONE 으로 굳히기)
 
 ---
 
