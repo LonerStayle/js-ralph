@@ -21,10 +21,10 @@ claude
 #    - .claude/config/verify-checklist.md       ← 도메인 검증 항목
 #    - .claude/scripts/{deploy,smoke-test}.sh   ← 첫 사이클이 자기 손으로 채워도 무방
 
-# 4) 자율 루프 시작 (메인 경로) — ralph-tick 을 주기 invoke
-/loop 1m /ralph-tick
-#   (또는 ralph-loop 플러그인 활성화돼 있으면 /ralph-loop:ralph-loop)
-#   (수동으로 한 스텝씩 보고 싶으면 그냥 /ralph-tick 만 반복 호출)
+# 4) 자율 루프 시작 (메인 경로, 한 단어)
+/ralph-run
+#   내부적으로 /loop /ralph-tick 자가-페이싱
+#   수동 한 스텝: /ralph-tick
 
 # 5) SPEC 동결 시점에 사람이 한 번 통과시킴
 #    agent 가 spec.md 를 작성하면 phase=IMPLEMENT_PENDING_FREEZE 에서 멈춤
@@ -106,9 +106,9 @@ Eject 결과:
 
 **메인 경로 (자율 구동)**
 ```
-/loop 1m /ralph-tick        # 메인 — ralph-tick 을 1분마다 반복. 매 tick = 1 step 전진
+/ralph-run                  # 메인 — 자율 루프 시작 (내부적으로 /loop /ralph-tick 자가-페이싱)
 /ralph-tick                 # 한 번만 1 step 전진 (수동 관찰용)
-/ralph-spec-done            # 사람이 SPEC 동결 인가 — 자율 진행이 여기서만 멈춤
+/ralph-spec-done            # 사람이 SPEC 동결 인가 (auto-freeze 모드 아닐 때만)
 /ralph-stop                 # 프로젝트 강제 종료
 ```
 

@@ -113,12 +113,20 @@ ralph 는 단일 루프가 아니라 **외부(사이클) + 내부(구현/검증)
 
 ## 슬래시 커맨드
 
+**메인 (자율 구동)**
 ```
-/ralph-deploy            # 원칙 6 — 첫 그린 라이트 (smoke deploy)
-/ralph-cycle-start       # 새 사이클 시작 → RESEARCH
+/ralph-run               # 자율 루프 시작 (한 단어, 내부적으로 /loop /ralph-tick)
+/ralph-tick              # 한 번만 1 step 전진 (수동 관찰용)
+/ralph-spec-done         # 사람이 SPEC 동결 인가 (auto-freeze 모드 아닐 때)
+/ralph-stop              # 프로젝트 강제 종료
+```
+
+**수동 override (자율 일시정지하고 끼어들 때만)**
+```
+/ralph-deploy            # 첫 그린 라이트 (smoke deploy)
+/ralph-cycle-start       # 새 사이클 수동 시작 → RESEARCH
 /ralph-research-done     # RESEARCH → IDEATION
 /ralph-ideation-done     # IDEATION → SPEC
-/ralph-spec-done         # SPEC 동결 → IMPLEMENT
 /ralph-start             # dev/* 플래너 호출 → phase-implement
 /ralph-done              # QA → review-council → gap-analysis → CHECKLIST → CYCLE_DONE
 /ralph-verify            # 수동 체크리스트 단독 실행

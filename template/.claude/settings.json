@@ -1,10 +1,69 @@
 {
+  "autoCompactEnabled": true,
+  "permissions": {
+    "defaultMode": "acceptEdits",
+    "allow": [
+      "Read",
+      "Edit",
+      "Write",
+      "Glob",
+      "Grep",
+      "Bash(git status)",
+      "Bash(git status:*)",
+      "Bash(git diff:*)",
+      "Bash(git log:*)",
+      "Bash(git show:*)",
+      "Bash(git add:*)",
+      "Bash(git commit:*)",
+      "Bash(git branch:*)",
+      "Bash(git checkout:*)",
+      "Bash(docker compose:*)",
+      "Bash(docker ps:*)",
+      "Bash(docker logs:*)",
+      "Bash(docker exec:*)",
+      "Bash(uv:*)",
+      "Bash(python3:*)",
+      "Bash(pytest:*)",
+      "Bash(pip install:*)",
+      "Bash(npm install)",
+      "Bash(npm run:*)",
+      "Bash(npx:*)",
+      "Bash(node:*)",
+      "Bash(curl -fsS:*)",
+      "Bash(curl --silent:*)",
+      "Bash(mkdir -p:*)",
+      "Bash(touch:*)",
+      "Bash(chmod +x:*)",
+      "Bash(ls:*)",
+      "Bash(cat:*)",
+      "Bash(head:*)",
+      "Bash(tail:*)",
+      "Bash(wc:*)",
+      "Bash(alembic:*)",
+      "Bash(echo:*)"
+    ],
+    "ask": [
+      "Bash(sudo:*)",
+      "Bash(gh repo create:*)",
+      "Bash(gh repo delete:*)"
+    ],
+    "deny": [
+      "Bash(rm -rf /:*)",
+      "Bash(rm -rf ~:*)",
+      "Bash(git push --force:*)",
+      "Bash(git push -f:*)",
+      "Bash(git reset --hard origin:*)"
+    ]
+  },
   "hooks": {
     "PostToolUse": [
       {
         "matcher": "Edit|Write|Bash",
         "hooks": [
-          { "type": "command", "command": "bash .claude/hooks/append-history.sh" }
+          {
+            "type": "command",
+            "command": "bash .claude/hooks/append-history.sh"
+          }
         ]
       }
     ],
@@ -12,7 +71,10 @@
       {
         "matcher": "",
         "hooks": [
-          { "type": "command", "command": "bash .claude/hooks/run-verify.sh" }
+          {
+            "type": "command",
+            "command": "bash .claude/hooks/run-verify.sh"
+          }
         ]
       }
     ]
