@@ -9,6 +9,10 @@ ralph-loop 플러그인의 setup-ralph-loop.sh 를 직접 호출해 자율 루�
 bash ~/.claude/plugins/cache/claude-plugins-official/ralph-loop/*/scripts/setup-ralph-loop.sh "ralph-tick 스킬에 따라 현재 phase 의 1 step 만 진행. 절차: (1) .claude/state/ralph-status.md 의 cycle/phase 읽기 (2) ralph-tick 디스패치 표대로 정확히 1 step (두 step 묶음 금지) (3) gate-verify 해당 시 실행 (4) status 갱신 + ralph-history.md append (5) PROJECT_DONE 도달 시에만 마지막 줄에 정확히 <promise>PROJECT_DONE</promise> 출력. 거짓 promise 금지. spec-auto-freeze.flag 없이 IMPLEMENT_PENDING_FREEZE 면 noop. STUCK_<phase> 면 noop." --completion-promise "PROJECT_DONE" --max-iterations 300
 ```
 
+## 자동 onboarding 진입
+- 새 하네스에서 첫 호출 시 master-spec.md frozen=false → onboarding skill 발화
+- master-spec 동결 후 INTAKE → CHUNK_DETAIL → cycle 시작
+
 setup 스크립트가 끝나면:
 - `.claude/ralph-loop.local.md` 생성됨 (state file)
 - ralph-loop 플러그인의 Stop hook 이 다음 종료 시도부터 자동 가로채서 같은 prompt 재투입
