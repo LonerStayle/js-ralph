@@ -41,10 +41,14 @@
       "Bash(wc:*)",
       "Bash(alembic:*)",
       "Bash(echo:*)",
-      "Edit(.claude/state/**)",
-      "Write(.claude/state/**)",
-      "Edit(.claude/config/**)",
-      "Write(.claude/config/**)",
+      "Bash(ruff:*)",
+      "Bash(mypy:*)",
+      "Edit(specs/**)",
+      "Write(specs/**)",
+      "Edit(IMPLEMENTATION_PLAN.md)",
+      "Write(IMPLEMENTATION_PLAN.md)",
+      "Edit(AGENTS.md)",
+      "Write(AGENTS.md)",
       "Bash(bash ~/.claude/plugins/cache/claude-plugins-official/ralph-loop/*/scripts/setup-ralph-loop.sh:*)"
     ],
     "ask": [
@@ -58,30 +62,6 @@
       "Bash(git push --force:*)",
       "Bash(git push -f:*)",
       "Bash(git reset --hard origin:*)"
-    ]
-  },
-  "hooks": {
-    "PostToolUse": [
-      {
-        "matcher": "Edit|Write|Bash",
-        "hooks": [
-          {
-            "type": "command",
-            "command": "bash \"${CLAUDE_PROJECT_DIR:-.}/.claude/hooks/append-history.sh\""
-          }
-        ]
-      }
-    ],
-    "Stop": [
-      {
-        "matcher": "",
-        "hooks": [
-          {
-            "type": "command",
-            "command": "bash \"${CLAUDE_PROJECT_DIR:-.}/.claude/hooks/run-verify.sh\""
-          }
-        ]
-      }
     ]
   }
 }

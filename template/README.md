@@ -1,72 +1,67 @@
 # {{PROJECT_NAME}}
 
-ralph 하네스. js-ralph factory 에서 eject 됨. 6원칙을 따른다.
+ralph 하네스 (v3-classic). js-ralph factory 에서 eject 됨.
+Geoffrey Huntley 의 오리지널 Ralph Wiggum 패턴 + 대표님 호칭 톤.
 
 ---
 
-## 빠른 시작
+## 5 단계 빠른 시작
 
-### 1단계 — 새 Claude 세션 시작
+### 1) 새 Claude 세션
 
 ```bash
 cd ~/jinsup_ralph/{{PROJECT_NAME}}
-claude    # 새 세션
+claude
 ```
 
 ralph 가 즉시 인사를 드립니다:
 **"대표님 안녕하십니까. 이 프로젝트의 비전과 지시사항을 주십시오."**
 
-### 2단계 — onboarding 8 질문 답변 (이게 사람이 하는 거의 전부)
+### 2) onboarding 8 질문 답변 → `specs/vision.md` 합성
 
 | 질문 | 내용 |
 |------|------|
-| 1. 비전 | 이 프로젝트 한 줄 비전 |
-| 2. 사용자 | 누가 사용? (1-2 문장 페르소나) |
-| 3. 핵심 산출물 | 반드시 만들어야 하는 것 1-3가지 |
-| 4. 성공 정의 | "성공"의 정의 (정량 + 정성) |
-| 5. 금지 / 범위 밖 | 절대 만들지 말 것 |
-| 6. 외부 의존 | 필요한 외부 API / 데이터 소스 |
-| 7. 규모 / 일정 / 비용 cap | cycles ≤ N |
-| 8. **Telegram chat_id** | 진척 보고를 받을 채널 ID (아래 "chat_id 발급" 참조) |
+| 1. 비전 | 한 줄 비전 |
+| 2. 사용자 | 1~2 문장 페르소나 |
+| 3. 핵심 산출물 | 1~3 가지 |
+| 4. 성공 정의 | 정량 + 정성 |
+| 5. 금지 / 범위 밖 | |
+| 6. 외부 의존 | API / 데이터 / 입력 |
+| 7. 규모·일정·비용 cap | cycles ≤ N 등 |
+| 8. 기술 스택 override | 디폴트와 다르게 갈지 |
 
-답변 후 ralph 가 `.claude/state/intake/master-spec.md` 를 합성합니다.
-초안 검토 후 **"확정"** 이라고 발화하시면 동결됩니다.
+답변 후 ralph 가 `specs/vision.md` 초안 작성 → 대표님 검토 → **"확정"** 발화로 동결.
 
-### 3단계 — 첫 그린 라이트 (`/ralph-deploy`)
+### 3) `AGENTS.md` 의 검증 명령 채우기
 
-```
-/ralph-deploy
-```
+`AGENTS.md` 에 lint / typecheck / tests 명령을 도메인에 맞게 채웁니다.
+직접 1회 돌려서 모두 exit 0 인지 확인하세요. 이게 ralph 의 backpressure 입니다.
 
-이 단계가 통과해야 사이클 진입이 풀립니다 (원칙 5: 배포 선세팅).
-도메인 `deploy.sh` / `smoke-test.sh` 가 1회 동작 + `state/ralph-history.md` 에 `[deploy] PASS` 기록.
-
-### 4단계 — 자율 루프 시작
+### 4) ralph-loop 시작
 
 ```
-/ralph-run
+/loop
 ```
 
-이후 ralph 가 100% 자율로 진행합니다:
-- INTAKE → chunk 분해 → 사이클 반복 (CHUNK_DETAIL → SPEC → IMPLEMENT → QA → ... → CYCLE_DONE)
-- CYCLE_DONE 마다 Telegram 진척 보고
-- 모든 chunk 완료 시 PROJECT_DONE → Telegram 완료 보고
+또는 ralph-loop 플러그인 활성. PROMPT.md 를 입력으로 박은 self-referential 루프가 시작됩니다.
+이후 ralph 가 자율 진행:
+- specs/ 읽음 → IMPLEMENTATION_PLAN.md 갱신/소화 → 구현 → 검증 → commit
+- 매 iteration fresh context
 
-### 5단계 — PROJECT_DONE 검토 (마지막 1회)
+### 5) PROJECT_DONE 검토 (마지막 1회)
 
-Telegram 완료 보고를 받으신 후 결과물을 직접 확인하시면 됩니다.
+ralph 가 `<promise>PROJECT_DONE</promise>` 를 출력하고 종료하면 결과물을 직접 검토.
 
 ---
 
-## Telegram chat_id 발급
+## 4 파일
 
-Telegram 진척 보고를 받으려면 chat_id 가 필요합니다.
-
-1. Claude Code 에서 `/telegram:configure` 실행해 봇 토큰 설정
-2. Telegram 에서 봇에게 메시지를 보내 채널 연결
-3. onboarding 8번째 질문에서 chat_id 를 답변 → ralph 가 자동으로 `.claude/config/notify.md` 에 기록
-
-chat_id 없이 진행해도 ralph 는 동작합니다. 알림은 `.claude/state/notifications.log` 에 fallback 기록됩니다.
+| 파일 | 누가 | 무엇 |
+|------|------|------|
+| `PROMPT.md` | factory 박음 + 대표님 표지판 추가 | ralph 행동 매뉴얼 |
+| `specs/*.md` | 대표님 (onboarding 자동 합성 + 직접 수정) | 무엇을 만들지 |
+| `AGENTS.md` | 대표님 또는 ralph 첫 iteration | 빌드/검증 명령 |
+| `IMPLEMENTATION_PLAN.md` | ralph 99% 자동 | TODO 체크리스트 |
 
 ---
 
@@ -74,40 +69,30 @@ chat_id 없이 진행해도 ralph 는 동작합니다. 알림은 `.claude/state/
 
 | 시점 | 내용 | 횟수 |
 |------|------|------|
-| onboarding 인터뷰 | 8 질문 답변 | ~8회 |
-| master-spec 동결 | "확정" 발화 | 1회 |
-| STUCK 응답 (선택) | Telegram reply | 0~N회 (응답 안 해도 ralph 진행) |
-| PROJECT_DONE 검토 | 결과물 확인 | 1회 |
+| onboarding | 8 질문 답변 | ~8 회 |
+| 동결 | "확정" 발화 | 1 회 |
+| AGENTS.md 검증 명령 채우기 | (선택) ralph 가 채워도 됨 | 0~1 회 |
+| 표지판 추가 | ralph 가 실수 반복 시 PROMPT.md 끝줄 | 0~N 회 |
+| PROJECT_DONE 검토 | 결과물 확인 | 1 회 |
 
 ---
 
-## 구조
+## 4 원칙 매핑
 
-자세한 6원칙 매핑은 `CLAUDE.md` 참조.
+자세한 설명은 `CLAUDE.md`.
 
-```
-.claude/
-  state/
-    intake/
-      master-spec.md    # 대표님 비전 문서 (onboarding 후 ralph 가 합성 + 동결)
-      manifest.md       # chunk 진행 표
-      chunks/           # 01.md, 02.md, ... (LLM 자동 분해)
-    cycles/<N>/         # 사이클별 산출물 (spec, runtime-evidence, qa-findings, ...)
-    ralph-status.md     # 현재 cycle + phase
-    ralph-history.md    # append-only 이벤트 로그
-  config/
-    notify.md           # Telegram chat_id + 메시지 schema
-    verify-checklist.md # CHECKLIST 통과 기준
-    model-routing.md    # 원칙 4 모델 선택 근거
-```
+| 원칙 | 구현 |
+|------|------|
+| 1. 단일 prompt 자기 재투입 | ralph-loop 플러그인 (Stop hook) |
+| 2. 사람이 작성한 spec | `specs/*.md` (onboarding 합성 + 직접 수정) |
+| 3. fresh context 매 iteration | ralph-loop 기본 동작 |
+| 4. deterministic backpressure | `AGENTS.md` 의 lint/typecheck/tests |
 
-## 6대 원칙 매핑
+---
 
-| 원칙 | 이 하네스에서 구현 |
-|------|-------------------|
-| 1. 자체 검증 | `gate-verify` + `verify-loop-output` 스킬 + Stop hook + runtime-evidence 필수 |
-| 2. 프롬프트 라우팅 | `phase-*` 스킬 + 슬래시 커맨드 분리 |
-| 3. Ralph 히스토리 | `append-history.sh` PostToolUse hook → `state/ralph-history.md` |
-| 4. 모델 라우팅 | 각 agent `model:` + `config/model-routing.md` |
-| 5. 배포 선세팅 | `scripts/deploy.sh` + `smoke-test.sh` + `/ralph-deploy` |
-| 6. 페르소나 풀 (직원) | 15 페르소나, 대표님 호칭 + 보고체 톤, council 에서 ≥2 동시 발화 |
+## v2 와의 차이 (이 하네스를 처음 보시는 분께)
+
+이전 v2 는 11 phase + 14 skill + 15 페르소나 + gate-verify framework 였습니다. self-referential 함정에 빠진 걸 막으려는 시도였지만, ralph 의 본질 (단순/멍청/지속) 을 잃었습니다.
+v3-classic 은 Geoffrey Huntley 의 오리지널 패턴 (4 파일 + bash loop) 으로 회귀했고, 대표님 호칭/톤만 유지합니다.
+
+자세한 회귀 결정 기록은 factory 의 `HANDOFF.md` 참조.
