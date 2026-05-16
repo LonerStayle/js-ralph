@@ -80,10 +80,19 @@ echo "[4] VERSION"
 v="$(tr -d '[:space:]' < "$T/VERSION" 2>/dev/null || echo)"
 if [ "$v" = "3" ]; then pass "VERSION = 3"; else fail "VERSION = '$v' (expected 3)"; fi
 
-# 5. 대표님 키워드 (호칭 톤 박힘 확인)
+# 5. 대표님 호칭 분리 검증
+#    - PROMPT.md / AGENTS.md / IMPLEMENTATION_PLAN.md 는 도구 중립이어야 함 (대표님 부재)
+#    - CLAUDE.md / README.md / onboarding SKILL 에는 박혀 있어야 함
 echo
-echo "[5] 대표님 호칭 박힘"
-for f in "PROMPT.md" "CLAUDE.md" "README.md" ".claude/skills/onboarding/SKILL.md"; do
+echo "[5] 대표님 호칭 분리 (CLAUDE 본거지, PROMPT 도구 중립)"
+for f in "PROMPT.md" "AGENTS.md" "IMPLEMENTATION_PLAN.md"; do
+  if grep -q "대표님" "$T/$f" 2>/dev/null; then
+    fail "대표님 leaked into $f (must be tool-neutral)"
+  else
+    pass "tool-neutral: $f"
+  fi
+done
+for f in "CLAUDE.md" "README.md" ".claude/skills/onboarding/SKILL.md"; do
   if grep -q "대표님" "$T/$f" 2>/dev/null; then
     pass "대표님 in $f"
   else
