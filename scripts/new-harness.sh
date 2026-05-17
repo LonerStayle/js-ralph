@@ -77,7 +77,7 @@ echo "  3) AGENTS.md 의 lint/typecheck/tests 명령을 도메인에 맞게 채�
 echo "     로컬에서 직접 1회 돌려 모두 exit 0 확인 (ralph 의 backpressure)"
 echo
 echo "  4) ralph-loop 자율 진행 시작:"
-echo "     /ralph-loop 'Read PROMPT.md and follow it.' \\"
+echo "     /ralph-loop:ralph-loop 'Read PROMPT.md and follow it.' \\"
 echo "       --completion-promise 'PROJECT_DONE' \\"
 echo "       --max-iterations 150"
 echo

@@ -73,7 +73,7 @@ onboarded_at: null
 
 ## 공통 — 매 iteration 흐름
 
-`/ralph-loop` 시작 후 매 iteration ralph 가 자동 진행:
+`/ralph-loop:ralph-loop` 시작 후 매 iteration ralph 가 자동 진행:
 
 ```
 이 CLAUDE.md (자동 로드) + PROMPT.md (Read) → §1 절차 따라:
@@ -136,7 +136,7 @@ onboarded_at: null
 - [ ] `AGENTS.md` 의 검증 명령 채우고 로컬에서 1회 exit 0 확인
 - [ ] ralph-loop 시작:
   ```
-  /ralph-loop "Read PROMPT.md and follow it." --completion-promise "PROJECT_DONE" --max-iterations 150
+  /ralph-loop:ralph-loop "Read PROMPT.md and follow it." --completion-promise "PROJECT_DONE" --max-iterations 150
   ```
 - [ ] 첫 iteration 끝나고 `IMPLEMENTATION_PLAN.md` 에 `[ ]` 가 누적되는지 확인
 
