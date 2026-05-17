@@ -43,6 +43,8 @@
       "Bash(echo:*)",
       "Bash(ruff:*)",
       "Bash(mypy:*)",
+      "Edit(CLAUDE.md)",
+      "Write(CLAUDE.md)",
       "Edit(specs/**)",
       "Write(specs/**)",
       "Edit(IMPLEMENTATION_PLAN.md)",

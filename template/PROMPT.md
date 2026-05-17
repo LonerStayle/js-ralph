@@ -27,18 +27,16 @@
 ## 2. "다음 행동" 의사결정 트리
 
 ```
-specs/ 에 .md 가 0개?
-  → 사용자에게 "specs/ 가 비어있어 진행 불가" 보고 + 종료
-  → (ralph-loop 는 같은 prompt 재투입 — specs 가 채워질 때까지 같은 보고 반복)
-
 IMPLEMENTATION_PLAN.md 에 미완 [ ] task 가 있나?
   YES → 첫 번째 [ ] 를 픽. §3 으로.
   NO  → §4 (plan 보강) 으로.
 
-모든 specs/ 항목이 plan 에 반영되어 있고 전부 [x]?
+모든 vision / spec 항목이 plan 에 반영되어 있고 전부 [x]?
   → "PROJECT_DONE" 보고 + 종료
   → 종료 메시지 끝줄에 정확히: <promise>PROJECT_DONE</promise>
 ```
+
+> "vision / spec" 의 출처는 환경에 따라 다르다 — Claude Code 환경이면 CLAUDE.md 의 비전 섹션, Geoffrey 원조면 specs/*. 어느 쪽이든 ralph 의 fresh context 에 자동/Read 로 로드된 사양 전체를 의미.
 
 ---
 
@@ -53,9 +51,9 @@ IMPLEMENTATION_PLAN.md 에 미완 [ ] task 가 있나?
 
 ## 4. plan 이 비었거나 모자랄 때 (자체 plan 보강)
 
-- specs/ 에서 아직 IMPLEMENTATION_PLAN.md 에 반영되지 않은 항목을 찾는다.
+- vision / spec 에서 아직 IMPLEMENTATION_PLAN.md 에 반영되지 않은 항목을 찾는다.
 - 발견 시 IMPLEMENTATION_PLAN.md 끝에 `- [ ] {task 한 줄}` 추가.
-- plan 이 망가졌다고 판단되면 (모순/순서꼬임) 통째 폐기하고 specs/ 기반으로 다시 짠다 — disposable.
+- plan 이 망가졌다고 판단되면 (모순/순서꼬임) 통째 폐기하고 vision / spec 기반으로 다시 짠다 — disposable.
 
 ---
 

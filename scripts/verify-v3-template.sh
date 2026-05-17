@@ -1,28 +1,21 @@
 #!/usr/bin/env bash
 # v3-classic template 정적 검증
 #
-# 합격 기준 (Geoffrey 오리지널 + 대표님 호칭):
+# 합격 기준 (Geoffrey 오리지널 + 대표님 호칭 + CLAUDE.md 단일 출처):
 #   존재:
-#     template/PROMPT.md
-#     template/AGENTS.md
-#     template/IMPLEMENTATION_PLAN.md
-#     template/specs/                          (디렉토리)
-#     template/CLAUDE.md
-#     template/README.md
-#     template/VERSION                         (내용 == 3)
+#     template/{PROMPT,AGENTS,IMPLEMENTATION_PLAN,CLAUDE,README}.md
+#     template/VERSION  (내용 == 3)
+#     template/specs/  (디렉토리, vision.* 파일은 없어야)
 #     template/.claude/settings.json
 #     template/.claude/skills/onboarding/SKILL.md
 #   부재 (v2 잔재 폐기 확인):
-#     template/.claude/agents/
-#     template/.claude/commands/
-#     template/.claude/state/
-#     template/.claude/hooks/
-#     template/.claude/config/
-#     template/.claude/scripts/
+#     template/.claude/{agents,commands,state,hooks,config,scripts}/
 #     template/HANDOFF.md
+#     template/specs/vision.*  (비전은 CLAUDE.md 가 단일 출처)
 #   skills/ 안에 onboarding 하나만 존재
-#   PROMPT.md / CLAUDE.md 에 "대표님" 키워드 박힘
-#   settings.json 에 hooks 섹션 없음
+#   호칭 분리: PROMPT/AGENTS/PLAN 도구 중립, CLAUDE/README/onboarding 본거지
+#   settings.json 에 hooks 섹션 없음 + Edit(CLAUDE.md) 권한 명시
+#   CLAUDE.md gating: "onboarded:" 키 존재 + "### 1.~### 8." 8 항목 placeholder
 
 set -uo pipefail
 
@@ -50,15 +43,22 @@ done
 
 if [ -d "$T/specs" ]; then pass "specs/ (dir)"; else fail "missing dir: specs/"; fi
 
-# 2. 부재해야 하는 것 (v2 잔재)
+# 2. 부재해야 하는 것 (v2 잔재 + 비전 단일출처 보장)
 echo
-echo "[2] v2 vestiges must be absent"
+echo "[2] v2 vestiges + vision split must be absent"
 for path in \
   ".claude/agents" ".claude/commands" ".claude/state" ".claude/hooks" \
   ".claude/config" ".claude/scripts" "HANDOFF.md"
 do
   if [ -e "$T/$path" ]; then fail "still present: $path"; else pass "absent: $path"; fi
 done
+# specs/vision.* 부재 (비전은 CLAUDE.md 단일 출처)
+vision_leak=$(ls "$T/specs"/vision.* 2>/dev/null | wc -l | tr -d ' ')
+if [ "$vision_leak" = "0" ]; then
+  pass "absent: specs/vision.*"
+else
+  fail "vision leaked into specs/: $(ls "$T/specs"/vision.* 2>/dev/null)"
+fi
 
 # 3. skills/ 안엔 onboarding 만
 echo
@@ -116,6 +116,50 @@ if grep -qE "(fresh context|ralph-loop|specs/)" "$T/PROMPT.md"; then
   pass "PROMPT.md references fresh context / ralph-loop / specs/"
 else
   fail "PROMPT.md missing Geoffrey anchors"
+fi
+
+# 8. CLAUDE.md gating + vision placeholders
+echo
+echo "[8] CLAUDE.md gating + vision placeholders"
+if grep -q "^onboarded:" "$T/CLAUDE.md"; then
+  pass "onboarded: key present"
+else
+  fail "CLAUDE.md missing 'onboarded:' gating key"
+fi
+placeholder_count=$(grep -cE "^### [1-8]\." "$T/CLAUDE.md" || true)
+if [ "$placeholder_count" = "8" ]; then
+  pass "vision placeholders = 8"
+else
+  fail "vision placeholders = $placeholder_count (expected 8)"
+fi
+if grep -q "미입력" "$T/CLAUDE.md"; then
+  pass "placeholders unfilled (template state)"
+else
+  fail "no '미입력' markers — template may already be onboarded"
+fi
+
+# 9. settings.json — Edit(CLAUDE.md) 권한 명시
+echo
+echo "[9] settings.json Edit(CLAUDE.md) permission"
+if grep -q '"Edit(CLAUDE.md)"' "$T/.claude/settings.json"; then
+  pass "Edit(CLAUDE.md) allowed"
+else
+  fail "settings.json missing Edit(CLAUDE.md)"
+fi
+
+# 10. onboarding skill references CLAUDE.md not vision.md
+echo
+echo "[10] onboarding skill targets CLAUDE.md"
+sk="$T/.claude/skills/onboarding/SKILL.md"
+if grep -q "CLAUDE.md" "$sk"; then
+  pass "onboarding references CLAUDE.md"
+else
+  fail "onboarding SKILL.md missing CLAUDE.md reference"
+fi
+if grep -q "specs/vision.md" "$sk"; then
+  fail "onboarding still references specs/vision.md (must target CLAUDE.md)"
+else
+  pass "no specs/vision.md reference"
 fi
 
 echo

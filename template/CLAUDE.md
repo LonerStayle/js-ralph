@@ -2,133 +2,145 @@
 
 이 하네스는 js-ralph factory 의 template 에서 eject 되었다.
 이 파일은 **자가완결**이다 — 부모 저장소를 참조하지 않는다.
+Claude Code 가 매 세션 자동 로드하므로, ralph 의 매 iteration fresh context 에 항상 포함된다.
 
 ---
 
-## 한 줄
+## 🔒 onboarding 상태 (gating)
 
-Geoffrey Huntley 의 오리지널 Ralph Wiggum 패턴 (`while :; do cat PROMPT.md | claude ; done` 의 정신)을 Claude Code 의 ralph-loop 플러그인 위에 그대로 얹은 ralph 하네스. 사람 개입 = onboarding 1 회 + PROJECT_DONE 검토 1 회.
+```yaml
+onboarded: false
+onboarded_at: null
+```
+
+> `onboarded: false` 이면 ralph 는 매 iteration 첫 응답을 **onboarding 인터뷰**로 시작한다.
+> 8 질문 답변 + "확정" 발화 후 onboarding skill 이 위 값을 `true` + ISO 타임스탬프로 갱신하고 아래 "비전 / 사양" 섹션을 채운다.
 
 ---
 
-## 4 파일 (전부)
+## 비전 / 사양 (대표님 영역 — onboarding 이 채움)
+
+### 1. 비전
+*(미입력. onboarding 으로 채워집니다.)*
+
+### 2. 대상 사용자
+*(미입력)*
+
+### 3. 핵심 산출물
+*(미입력)*
+
+### 4. 성공 정의
+*(미입력)*
+
+### 5. 금지 / 범위 밖
+*(미입력)*
+
+### 6. 외부 의존
+*(미입력)*
+
+### 7. 규모·일정·비용 cap
+*(미입력)*
+
+### 8. 기술 스택
+*(미입력 — 빈 채로 두면 아래 "기본 기술 스택" 디폴트가 적용됩니다)*
+
+---
+
+## 공통 — 4 파일 (이 하네스의 전부)
 
 | 파일 | 무엇 | 누가 만드나 |
 |------|------|------------|
-| `PROMPT.md` | ralph 의 행동 매뉴얼 (매 iteration 의 입력) | factory 가 박아둠. 대표님은 "표지판" 한 줄만 누적 추가 |
-| `specs/*.md` | 무엇을 만들지 (비전 + 사양). 도메인별 다파일 가능 | **대표님** (onboarding 인터뷰로 `specs/vision.md` 자동 합성). 이후 직접 수정 OK |
-| `AGENTS.md` | 어떻게 빌드·검증 (명령만, 60줄 이하) | 대표님 또는 첫 ralph iteration 이 채움 |
-| `IMPLEMENTATION_PLAN.md` | 현재 TODO 체크리스트 | **ralph 가 99% 작성**. 사람은 빈 파일만 시작 |
+| 이 `CLAUDE.md` | **비전 + 환경 컨텍스트 + 호칭 톤** (Claude Code 자동 로드) | onboarding 이 자동 합성 (위 섹션) |
+| `PROMPT.md` | ralph 행동 매뉴얼 (도구 중립) | factory 가 박아둠. 사용자는 `<!-- signs -->` 표지판 한 줄만 누적 |
+| `specs/*.md` | (선택) 도메인 추가 사양 — api.md / ui.md / data.md 등 | 대표님 또는 ralph 첫 iteration |
+| `AGENTS.md` | 빌드/검증 명령 (60줄 이하) | 대표님 또는 ralph 첫 iteration |
+| `IMPLEMENTATION_PLAN.md` | 현재 TODO 체크리스트 | ralph 99% 자동 |
 
-> 이 외 어떤 파일도 ralph 의 동작에 본질적이지 않다. v2 의 11 phase / 15 페르소나 / 14 skill / gate-verify framework 는 **의도적으로 제거**됨.
+> v2 의 11 phase / 15 페르소나 / 14 skill / gate-verify framework 는 **의도적으로 제거**됨.
 
 ---
 
-## 4 원칙 (Geoffrey 정석)
+## 공통 — 4 원칙 (Geoffrey 정석)
 
 | # | 원칙 | 이 하네스에서 구현 |
 |---|------|--------------------|
-| 1 | **단일 prompt + 자기 재투입 루프** | ralph-loop 플러그인의 Stop hook 이 매 iteration 동일 prompt (= 이 디렉토리의 `PROMPT.md`) 를 fresh context 로 재투입 |
-| 2 | **사람이 작성한 파일 spec** | `specs/*.md` — LLM 이 환각으로 만들지 않음. onboarding 으로 `vision.md` 합성 후 동결 |
-| 3 | **fresh context 매 iteration** | ralph 는 앞 iteration 을 기억하지 못한다. 상태는 git + 위 4 파일에만 존재 |
-| 4 | **deterministic backpressure** | `AGENTS.md` 의 검증 명령 (lint/typecheck/tests). LLM 채점 (gate-verify 같은 것) 없음. exit 0 일 때만 commit |
+| 1 | 단일 prompt + 자기 재투입 루프 | ralph-loop 플러그인의 Stop hook 이 매 iteration 동일 prompt 를 fresh context 로 재투입 |
+| 2 | 사람이 작성한 파일 spec | 이 CLAUDE.md 의 "비전 / 사양" 섹션 (onboarding 합성 후 동결) + (선택) `specs/*` |
+| 3 | fresh context 매 iteration | ralph 는 앞 iteration 을 기억 X. 상태는 git + 4 파일에만 |
+| 4 | deterministic backpressure | `AGENTS.md` 의 검증 명령 (lint/typecheck/tests). LLM 채점 없음 |
 
 ---
 
-## 사용자 호칭 / 톤 (이 환경 전용 — 유일하게 유지된 v2 컨셉)
+## 공통 — 매 iteration 흐름
 
-`PROMPT.md` 는 의도적으로 도구 중립이고 호칭/톤 안내를 담지 않는다.
-**이 `CLAUDE.md` 가 호칭/톤의 단일 출처**다. ralph 는 매 iteration `PROMPT.md` + 이 `CLAUDE.md` 를 같은 fresh context 로 받으므로, 아래 규칙은 PROMPT 의 "사용자" 를 **"대표님"** 으로 자동 치환한다.
+`/ralph-loop` 시작 후 매 iteration ralph 가 자동 진행:
+
+```
+이 CLAUDE.md (자동 로드) + PROMPT.md (Read) → §1 절차 따라:
+  specs/ 읽기 → AGENTS.md 읽기 → IMPLEMENTATION_PLAN.md 읽기
+  → 첫 [ ] task 선택 (없으면 비전 기반 plan 보강)
+  → 구현
+  → AGENTS.md 검증 명령 (모두 exit 0)
+  → PASS 면 commit + [ ]→[x]
+  → 종료 → Stop hook 재투입
+```
+
+종료 조건:
+- 모든 비전 항목이 plan 에 반영되고 전부 `[x]` → `<promise>PROJECT_DONE</promise>` 출력
+- `--max-iterations` 도달
+- 대표님 명시 정지
+
+---
+
+## 공통 — 사용자 호칭 / 톤
+
+`PROMPT.md` 는 도구 중립이라 "사용자" 라고만 표기한다.
+**이 CLAUDE.md 에서 "사용자 = 대표님" 으로 자동 치환**한다.
 
 ### 호칭
-
 - 사용자 = **대표님 (방향 결정자)**
 - 모든 응답·보고·커밋 메시지에 호칭은 "대표님" 으로 통일
 
 ### 톤
-
 - 어투: 경어, 일관된 격식체. 반말 혼용 금지
 - 길이: 응답·보고 3~5줄. 불필요한 수식어 제거
 - 구조: 한 일 / 결과 / 다음 방향 분리
 - 에러 메시지 그대로 노출 금지. "이런 결정이 필요합니다" 로 프레이밍
-- 보고 첫 줄에 `대표님께:` prefix 권장 (필수 아님 — 호칭이 한 번이라도 등장하면 충족)
+- 보고 첫 줄에 `대표님께:` prefix 권장 (필수 아님)
 
-### 개입 시점 (대표님)
-
-1. **시작**: onboarding 8 질문 답변 → `specs/vision.md` 자동 합성 → "확정" 발화로 동결 (1 회)
-2. **끝**: ralph 가 `<promise>PROJECT_DONE</promise>` 출력 후 종료 → 결과물 검토 (1 회)
-
-> v2 의 5 역할 × 3 페르소나 = 15 직원 페르소나 framework 는 **폐기**되었다.
-> council / dispatch cap / gap-analysis / gate-verify 같은 phase framework 도 **폐기**되었다.
-> 남은 것: 호칭과 톤뿐.
+### 대표님 개입 시점 (2회)
+1. **시작**: onboarding 8 질문 답변 → 위 "비전 / 사양" 자동 합성 → "확정" 발화로 동결
+2. **끝**: ralph 가 `<promise>PROJECT_DONE</promise>` 출력 후 결과물 검토
 
 ---
 
-## 기본 기술 스택 (factory 디폴트)
+## 공통 — 기본 기술 스택 (factory 디폴트)
 
-명시적 다른 지시 없으면 이 조합으로 진행한다.
+위 "8. 기술 스택" 에 override 명시 안 했으면 이 조합으로 진행한다.
 
-| 영역 | 기본 스택 |
-|------|-----------|
+| 영역 | 기본 |
+|------|------|
 | Backend | Python + uv + FastAPI + SQLAlchemy |
-| Web Frontend | React |
+| Web Frontend | React (Vite + TypeScript) |
 | Mobile App | Android (Kotlin, Android Studio). iOS / Flutter 의도적 포기 |
 | Database | Postgres |
 | 그 외 (인프라/CI/캐시) | 합리적 기본값 |
 
 ---
 
-## 매 iteration 흐름 (PROMPT.md 가 강제)
+## 공통 — 신규 시작 체크리스트
 
-```
-git status → specs/ 읽기 → AGENTS.md 읽기 → IMPLEMENTATION_PLAN.md 읽기
-  → 첫 [ ] task 선택 (없으면 specs 기반 plan 보강)
-  → 구현
-  → AGENTS.md 의 검증 명령 모두 실행
-  → PASS 면 commit + [ ]→[x]
-  → 종료 (ralph-loop 가 재투입)
-```
-
-종료 조건:
-- 모든 specs 항목이 plan 에 반영되고 전부 `[x]` → `<promise>PROJECT_DONE</promise>` 출력 후 종료
-- `--max-iterations 300` 도달
-- 대표님 명시 정지
-
----
-
-## onboarding (NOT_STARTED 첫 진입)
-
-eject 직후 `claude` 세션을 열면 ralph 가 즉시 대표님께 인사를 드리고 **8 질문 인터뷰**를 진행한다.
-
-| # | 질문 |
-|---|------|
-| 1 | 비전 — 이 프로젝트 한 줄 비전 |
-| 2 | 사용자 — 누가 사용하나 (1~2 문장 페르소나) |
-| 3 | 핵심 산출물 — 반드시 만들어야 할 것 1~3가지 |
-| 4 | 성공 정의 — 정량 + 정성 |
-| 5 | 금지 / 범위 밖 |
-| 6 | 외부 의존 — API / 데이터 소스 / 사용자 입력 |
-| 7 | 규모·일정·비용 cap |
-| 8 | 기술 스택 override — 위 디폴트와 다르게 갈지 (없으면 디폴트) |
-
-응답을 바탕으로 `specs/vision.md` 초안을 합성한다.
-대표님이 **"확정" / "OK" / "진행해"** 중 하나로 발화하면 frontmatter `frozen: true` 박고 ralph 가 자율 루프에 진입한다.
-
-> v2 의 `master-spec` / `manifest.md` / `chunks/` / `cycles/` 는 **없다**. `specs/vision.md` 한 파일이 출발. 필요하면 ralph 또는 대표님이 `specs/api.md`, `specs/ui.md`, `specs/data.md` 등을 추가한다.
-
----
-
-## 신규 시작 체크리스트
-
-- [ ] `claude` 세션 열고 onboarding 인터뷰 완료 → `specs/vision.md` 동결 ("확정" 발화)
-- [ ] `AGENTS.md` 의 검증 명령 (`lint` / `typecheck` / `tests`) 도메인 명령으로 채움
-- [ ] `AGENTS.md` 의 검증 명령을 로컬에서 직접 1회 돌려서 exit 0 확인
-- [ ] ralph-loop 플러그인 활성 (`/loop` 또는 ralph-loop CLI). PROMPT.md 가 입력으로 박혀 있는지 확인
+- [ ] `claude` 세션 열기 — ralph 가 자동 onboarding 인터뷰 시작 (위 `onboarded: false` 트리거)
+- [ ] 8 질문 답변 후 "확정" 발화 → 이 CLAUDE.md 의 "비전 / 사양" 자동 합성 + `onboarded: true`
+- [ ] `AGENTS.md` 의 검증 명령 채우고 로컬에서 1회 exit 0 확인
+- [ ] ralph-loop 시작:
+  ```
+  /ralph-loop "Read PROMPT.md and follow it." --completion-promise "<promise>PROJECT_DONE</promise>" --max-iterations 300
+  ```
 - [ ] 첫 iteration 끝나고 `IMPLEMENTATION_PLAN.md` 에 `[ ]` 가 누적되는지 확인
 
 ---
 
-## 표지판 추가 방법
+## 공통 — 표지판
 
-ralph 가 같은 실수 반복 시 `PROMPT.md` 의 `<!-- signs -->` 섹션 아래에 한 줄 추가.
-**`specs/` 나 `AGENTS.md` 에는 행동 교정 문구를 박지 마라** — 그건 PROMPT.md 의 일이다.
+ralph 가 같은 실수를 반복하면 `PROMPT.md` 의 `<!-- signs -->` 섹션 아래에 한 줄 추가.

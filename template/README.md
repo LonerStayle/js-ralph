@@ -14,10 +14,10 @@ cd ~/jinsup_ralph/{{PROJECT_NAME}}
 claude
 ```
 
-ralph 가 즉시 인사를 드립니다:
-**"대표님 안녕하십니까. 이 프로젝트의 비전과 지시사항을 주십시오."**
+ralph 가 `CLAUDE.md` 의 `onboarded: false` 를 감지하고 즉시 onboarding 인터뷰를 시작합니다:
+**"대표님 안녕하십니까. 8 가지 질문을 드리겠습니다."**
 
-### 2) onboarding 8 질문 답변 → `specs/vision.md` 합성
+### 2) onboarding 8 질문 답변 → CLAUDE.md 의 "비전 / 사양" 자동 합성
 
 | 질문 | 내용 |
 |------|------|
@@ -30,23 +30,21 @@ ralph 가 즉시 인사를 드립니다:
 | 7. 규모·일정·비용 cap | cycles ≤ N 등 |
 | 8. 기술 스택 override | 디폴트와 다르게 갈지 |
 
-답변 후 ralph 가 `specs/vision.md` 초안 작성 → 대표님 검토 → **"확정"** 발화로 동결.
+답변 후 ralph 가 `CLAUDE.md` 의 "비전 / 사양" 섹션 8 항목을 채웁니다. 검토 후 **"확정"** 발화로 `onboarded: true` + 타임스탬프 박힙니다.
 
 ### 3) `AGENTS.md` 의 검증 명령 채우기
 
-`AGENTS.md` 에 lint / typecheck / tests 명령을 도메인에 맞게 채웁니다.
-직접 1회 돌려서 모두 exit 0 인지 확인하세요. 이게 ralph 의 backpressure 입니다.
+`AGENTS.md` 에 lint / typecheck / tests 명령을 도메인에 맞게 채우고 로컬에서 1회 돌려 모두 exit 0 인지 확인하세요. 이게 ralph 의 backpressure 입니다.
 
 ### 4) ralph-loop 시작
 
 ```
-/loop
+/ralph-loop "Read PROMPT.md and follow it." --completion-promise "<promise>PROJECT_DONE</promise>" --max-iterations 300
 ```
 
-또는 ralph-loop 플러그인 활성. PROMPT.md 를 입력으로 박은 self-referential 루프가 시작됩니다.
-이후 ralph 가 자율 진행:
-- specs/ 읽음 → IMPLEMENTATION_PLAN.md 갱신/소화 → 구현 → 검증 → commit
-- 매 iteration fresh context
+- 매 iteration ralph 가 fresh context 로 `CLAUDE.md` (자동 로드) + `PROMPT.md` (명령에 의해 Read) 를 입력으로 받습니다
+- PROMPT.md §1 절차 따라 `specs/`, `AGENTS.md`, `IMPLEMENTATION_PLAN.md` 읽고 한 task 진행 → 검증 → commit → 종료
+- Stop hook 이 동일 prompt 재투입
 
 ### 5) PROJECT_DONE 검토 (마지막 1회)
 
@@ -58,9 +56,10 @@ ralph 가 `<promise>PROJECT_DONE</promise>` 를 출력하고 종료하면 결과
 
 | 파일 | 누가 | 무엇 |
 |------|------|------|
-| `PROMPT.md` | factory 박음 + 대표님 표지판 추가 | ralph 행동 매뉴얼 |
-| `specs/*.md` | 대표님 (onboarding 자동 합성 + 직접 수정) | 무엇을 만들지 |
-| `AGENTS.md` | 대표님 또는 ralph 첫 iteration | 빌드/검증 명령 |
+| **`CLAUDE.md`** | factory + onboarding 자동 합성 | 비전·사양 + 환경 컨텍스트 + 호칭 톤 (Claude Code 자동 로드) |
+| `PROMPT.md` | factory + 표지판 누적 | ralph 행동 매뉴얼 (도구 중립) |
+| `specs/*.md` | (선택) 대표님 또는 ralph 첫 iteration | 도메인 추가 사양 — api/ui/data 등 |
+| `AGENTS.md` | 대표님 또는 ralph 첫 iteration | 빌드/검증 명령 (60줄 이하) |
 | `IMPLEMENTATION_PLAN.md` | ralph 99% 자동 | TODO 체크리스트 |
 
 ---
@@ -70,9 +69,9 @@ ralph 가 `<promise>PROJECT_DONE</promise>` 를 출력하고 종료하면 결과
 | 시점 | 내용 | 횟수 |
 |------|------|------|
 | onboarding | 8 질문 답변 | ~8 회 |
-| 동결 | "확정" 발화 | 1 회 |
-| AGENTS.md 검증 명령 채우기 | (선택) ralph 가 채워도 됨 | 0~1 회 |
-| 표지판 추가 | ralph 가 실수 반복 시 PROMPT.md 끝줄 | 0~N 회 |
+| 동결 | "확정" 발화 → `onboarded: true` | 1 회 |
+| AGENTS.md 검증 명령 채우기 | (또는 ralph 가 채워도 됨) | 0~1 회 |
+| 표지판 추가 | ralph 가 실수 반복 시 PROMPT.md `<!-- signs -->` 아래 한 줄 | 0~N 회 |
 | PROJECT_DONE 검토 | 결과물 확인 | 1 회 |
 
 ---
@@ -84,15 +83,16 @@ ralph 가 `<promise>PROJECT_DONE</promise>` 를 출력하고 종료하면 결과
 | 원칙 | 구현 |
 |------|------|
 | 1. 단일 prompt 자기 재투입 | ralph-loop 플러그인 (Stop hook) |
-| 2. 사람이 작성한 spec | `specs/*.md` (onboarding 합성 + 직접 수정) |
-| 3. fresh context 매 iteration | ralph-loop 기본 동작 |
+| 2. 사람이 작성한 spec | `CLAUDE.md` 의 비전/사양 섹션 + (선택) `specs/*` |
+| 3. fresh context 매 iteration | ralph-loop 기본 동작 + CLAUDE.md 자동 로드 |
 | 4. deterministic backpressure | `AGENTS.md` 의 lint/typecheck/tests |
 
 ---
 
 ## v2 와의 차이 (이 하네스를 처음 보시는 분께)
 
-이전 v2 는 11 phase + 14 skill + 15 페르소나 + gate-verify framework 였습니다. self-referential 함정에 빠진 걸 막으려는 시도였지만, ralph 의 본질 (단순/멍청/지속) 을 잃었습니다.
-v3-classic 은 Geoffrey Huntley 의 오리지널 패턴 (4 파일 + bash loop) 으로 회귀했고, 대표님 호칭/톤만 유지합니다.
+이전 v2 는 11 phase + 14 skill + 15 페르소나 + gate-verify framework 였습니다. self-referential 함정에 빠지는 걸 막으려는 시도였지만, ralph 의 본질 (단순/멍청/지속) 을 잃었습니다.
+
+v3-classic 은 Geoffrey Huntley 의 오리지널 패턴 (4 파일 + bash loop) 으로 회귀했고, **Claude Code 의 CLAUDE.md 자동 로드를 활용해 비전을 CLAUDE.md 안에 단일 출처**로 둡니다 (Geoffrey 의 specs/vision.md 분리 모델 대비 더 단순). 호칭은 "대표님" 만 유지.
 
 자세한 회귀 결정 기록은 factory 의 `HANDOFF.md` 참조.
