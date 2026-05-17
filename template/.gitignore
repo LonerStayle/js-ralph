@@ -17,17 +17,13 @@
 .env.*
 !.env.example
 
-# python (template/하네스 작업 중 임시 가능)
+# python
 __pycache__/
 *.pyc
 .venv/
 .uv/
 
-# node (template/하네스 작업 중 임시 가능)
+# node
 node_modules/
 .npm/
 .pnpm-store/
-
-# handoff (세션 간 임시 메모, 커밋 대상 아님)
-HANDOFF.md
-

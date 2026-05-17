@@ -35,6 +35,7 @@ echo "[1] required files / dirs"
 for path in \
   "PROMPT.md" "AGENTS.md" "IMPLEMENTATION_PLAN.md" \
   "CLAUDE.md" "README.md" "VERSION" \
+  ".gitignore" \
   ".claude/settings.json" \
   ".claude/skills/onboarding/SKILL.md"
 do
