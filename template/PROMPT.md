@@ -44,12 +44,10 @@ IMPLEMENTATION_PLAN.md 에 미완 [ ] task 가 있나?
 
 ## 3. 한 task 실행 규칙
 
-- task 의 범위가 큰지 작은지 먼저 판단. 1 iteration 안에 끝낼 수 있는 크기인지.
-  - 너무 크면 → IMPLEMENTATION_PLAN.md 에서 하위 task 로 쪼개고, 첫 하위 task 만 진행.
-- 코드 변경은 최소 단위로. 이해 안 되는 코드는 건드리지 마라.
-- 외부 의존 추가는 specs/ 에 명시된 것만. specs 에 없는 의존 추가 금지.
+- 변경 전에 먼저 codebase 를 search 한다. 이미 구현돼 있다고 가정 X, 구현 안 됐다고도 가정 X — 직접 확인.
+- 독립 가능한 하위 작업은 parallel subagents 로 병렬 dispatch.
+- 코드 변경은 최소 단위로.
 - 테스트 자체를 약하게 만들어 통과시키는 짓 금지 (Goodhart 함정). 검증 기준이 약하다고 느끼면 AGENTS.md 에 항목 추가 후 진행.
-- 이미 만들어진 파일을 우선 수정. 새 파일은 꼭 필요할 때만.
 
 ---
 
@@ -57,7 +55,6 @@ IMPLEMENTATION_PLAN.md 에 미완 [ ] task 가 있나?
 
 - specs/ 에서 아직 IMPLEMENTATION_PLAN.md 에 반영되지 않은 항목을 찾는다.
 - 발견 시 IMPLEMENTATION_PLAN.md 끝에 `- [ ] {task 한 줄}` 추가.
-  - 1 iteration 에 5개 이하만 추가. 한 번에 모든 걸 풀어쓰지 마라.
 - plan 이 망가졌다고 판단되면 (모순/순서꼬임) 통째 폐기하고 specs/ 기반으로 다시 짠다 — disposable.
 
 ---
@@ -66,7 +63,6 @@ IMPLEMENTATION_PLAN.md 에 미완 [ ] task 가 있나?
 
 - 검증은 AGENTS.md 의 명령으로만 한다. 너 스스로 채점하지 마라.
 - 모든 검증 명령이 exit 0 일 때만 commit.
-- 검증 명령이 없다 = 이 프로젝트는 ralph 가 안전하게 못 돌리는 상태. 그 사실을 보고하고 종료.
 
 ---
 
@@ -83,7 +79,6 @@ IMPLEMENTATION_PLAN.md 에 미완 [ ] task 가 있나?
 ## 7. 표지판
 
 ralph 가 같은 실수를 반복하면 사용자가 이 섹션 끝에 한 줄을 추가한다.
-표지판은 PROMPT.md **에만** 둔다. specs/ 나 AGENTS.md 에 행동 교정 문구 박지 마라.
 
 <!-- signs -->
 <!-- 예) "DB 마이그레이션 추가 시 항상 down 도 작성하라" -->
