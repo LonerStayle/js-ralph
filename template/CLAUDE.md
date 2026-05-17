@@ -46,15 +46,15 @@ onboarded_at: null
 
 ---
 
-## 공통 — 4 파일 (이 하네스의 전부)
+## 공통 — 5 파일 (Geoffrey 정석 4 + Claude Code 자동 로드 1)
 
 | 파일 | 무엇 | 누가 만드나 |
 |------|------|------------|
 | 이 `CLAUDE.md` | **비전 + 환경 컨텍스트 + 호칭 톤** (Claude Code 자동 로드) | onboarding 이 자동 합성 (위 섹션) |
 | `PROMPT.md` | ralph 행동 매뉴얼 (도구 중립) | factory 가 박아둠. 사용자는 `<!-- signs -->` 표지판 한 줄만 누적 |
-| `specs/*.md` | (선택) 도메인 추가 사양 — api.md / ui.md / data.md 등 | 대표님 또는 ralph 첫 iteration |
 | `AGENTS.md` | 빌드/검증 명령 (60줄 이하) | 대표님 또는 ralph 첫 iteration |
-| `IMPLEMENTATION_PLAN.md` | 현재 TODO 체크리스트 | ralph 99% 자동 |
+| `IMPLEMENTATION_PLAN.md` | 현재 TODO 체크리스트 | ralph 99% 자동. 사람은 빈 파일만 시작 |
+| `specs/*.md` | (선택) 도메인 추가 사양 — api.md / ui.md / data.md 등 | 대표님 또는 ralph 첫 iteration |
 
 > v2 의 11 phase / 15 페르소나 / 14 skill / gate-verify framework 는 **의도적으로 제거**됨.
 
@@ -130,6 +130,7 @@ onboarded_at: null
 
 ## 공통 — 신규 시작 체크리스트
 
+- [ ] (1회) Claude Code 에 **ralph-loop 플러그인** 설치 — `/plugin install ralph-loop`
 - [ ] `claude` 세션 열기 — ralph 가 자동 onboarding 인터뷰 시작 (위 `onboarded: false` 트리거)
 - [ ] 8 질문 답변 후 "확정" 발화 → 이 CLAUDE.md 의 "비전 / 사양" 자동 합성 + `onboarded: true`
 - [ ] `AGENTS.md` 의 검증 명령 채우고 로컬에서 1회 exit 0 확인

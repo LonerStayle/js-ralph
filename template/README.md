@@ -5,6 +5,20 @@ Geoffrey Huntley 의 오리지널 Ralph Wiggum 패턴 + 대표님 호칭 톤.
 
 ---
 
+## 사전 조건 (1회 설치)
+
+Claude Code 의 **ralph-loop 플러그인** 이 활성화돼 있어야 합니다.
+
+```bash
+# Claude Code 안에서 한 번:
+/plugin install ralph-loop
+# 또는 plugin marketplace 카탈로그에서 'ralph-loop' 선택
+```
+
+설치 확인: `/help` → ralph-loop 의 슬래시 커맨드들이 보여야 합니다.
+
+---
+
 ## 5 단계 빠른 시작
 
 ### 1) 새 Claude 세션
@@ -52,15 +66,15 @@ ralph 가 `<promise>PROJECT_DONE</promise>` 를 출력하고 종료하면 결과
 
 ---
 
-## 4 파일
+## 5 파일 (Geoffrey 정석 4 + Claude Code 자동 로드 1)
 
 | 파일 | 누가 | 무엇 |
 |------|------|------|
 | **`CLAUDE.md`** | factory + onboarding 자동 합성 | 비전·사양 + 환경 컨텍스트 + 호칭 톤 (Claude Code 자동 로드) |
 | `PROMPT.md` | factory + 표지판 누적 | ralph 행동 매뉴얼 (도구 중립) |
-| `specs/*.md` | (선택) 대표님 또는 ralph 첫 iteration | 도메인 추가 사양 — api/ui/data 등 |
 | `AGENTS.md` | 대표님 또는 ralph 첫 iteration | 빌드/검증 명령 (60줄 이하) |
 | `IMPLEMENTATION_PLAN.md` | ralph 99% 자동 | TODO 체크리스트 |
+| `specs/*.md` | (선택) 대표님 또는 ralph 첫 iteration | 도메인 추가 사양 — api/ui/data 등 |
 
 ---
 
