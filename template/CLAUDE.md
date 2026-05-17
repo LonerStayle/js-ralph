@@ -6,22 +6,22 @@ Claude Code 가 매 세션 자동 로드하므로, ralph 의 매 iteration fresh
 
 ---
 
-## 🔒 onboarding 상태 (gating)
+## 🔒 비전 인터뷰 상태 (gating)
 
 ```yaml
 onboarded: false
 onboarded_at: null
 ```
 
-> `onboarded: false` 이면 ralph 는 매 iteration 첫 응답을 **onboarding 인터뷰**로 시작한다.
-> 8 질문 답변 + "확정" 발화 후 onboarding skill 이 위 값을 `true` + ISO 타임스탬프로 갱신하고 아래 "비전 / 사양" 섹션을 채운다.
+> `onboarded: false` 이면 ralph 는 매 iteration 첫 응답을 **비전 인터뷰** (`vision-intake` skill) 로 시작한다.
+> 8 질문 답변 + "확정" 발화 후 vision-intake skill 이 위 값을 `true` + ISO 타임스탬프로 갱신하고 아래 "비전 / 사양" 섹션을 채운다.
 
 ---
 
-## 비전 / 사양 (대표님 영역 — onboarding 이 채움)
+## 비전 / 사양 (대표님 영역 — vision-intake 가 채움)
 
 ### 1. 비전
-*(미입력. onboarding 으로 채워집니다.)*
+*(미입력. vision-intake skill 로 채워집니다.)*
 
 ### 2. 대상 사용자
 *(미입력)*
@@ -50,7 +50,7 @@ onboarded_at: null
 
 | 파일 | 무엇 | 누가 만드나 |
 |------|------|------------|
-| 이 `CLAUDE.md` | **비전 + 환경 컨텍스트 + 호칭 톤** (Claude Code 자동 로드) | onboarding 이 자동 합성 (위 섹션) |
+| 이 `CLAUDE.md` | **비전 + 환경 컨텍스트 + 호칭 톤** (Claude Code 자동 로드) | vision-intake skill 이 자동 합성 (위 섹션) |
 | `PROMPT.md` | ralph 행동 매뉴얼 (도구 중립) | factory 가 박아둠. 사용자는 `<!-- signs -->` 표지판 한 줄만 누적 |
 | `AGENTS.md` | 빌드/검증 명령 (60줄 이하) | 대표님 또는 ralph 첫 iteration |
 | `IMPLEMENTATION_PLAN.md` | 현재 TODO 체크리스트 | ralph 99% 자동. 사람은 빈 파일만 시작 |
@@ -65,7 +65,7 @@ onboarded_at: null
 | # | 원칙 | 이 하네스에서 구현 |
 |---|------|--------------------|
 | 1 | 단일 prompt + 자기 재투입 루프 | ralph-loop 플러그인의 Stop hook 이 매 iteration 동일 prompt 를 fresh context 로 재투입 |
-| 2 | 사람이 작성한 파일 spec | 이 CLAUDE.md 의 "비전 / 사양" 섹션 (onboarding 합성 후 동결) + (선택) `specs/*` |
+| 2 | 사람이 작성한 파일 spec | 이 CLAUDE.md 의 "비전 / 사양" 섹션 (vision-intake 합성 후 동결) + (선택) `specs/*` |
 | 3 | fresh context 매 iteration | ralph 는 앞 iteration 을 기억 X. 상태는 git + 4 파일에만 |
 | 4 | deterministic backpressure | `AGENTS.md` 의 검증 명령 (lint/typecheck/tests). LLM 채점 없음 |
 
@@ -109,7 +109,7 @@ onboarded_at: null
 - 보고 첫 줄에 `대표님께:` prefix 권장 (필수 아님)
 
 ### 대표님 개입 시점 (2회)
-1. **시작**: onboarding 8 질문 답변 → 위 "비전 / 사양" 자동 합성 → "확정" 발화로 동결
+1. **시작**: vision-intake 8 질문 답변 → 위 "비전 / 사양" 자동 합성 → "확정" 발화로 동결
 2. **끝**: ralph 가 `PROJECT_DONE` 출력 후 결과물 검토
 
 ---
@@ -131,7 +131,7 @@ onboarded_at: null
 ## 공통 — 신규 시작 체크리스트
 
 - [ ] (1회) Claude Code 에 **ralph-loop 플러그인** 설치 — `/plugin install ralph-loop`
-- [ ] `claude` 세션 열기 — ralph 가 자동 onboarding 인터뷰 시작 (위 `onboarded: false` 트리거)
+- [ ] `claude` 세션 열기 — ralph 가 vision-intake skill 자동 호출 (위 `onboarded: false` 트리거)
 - [ ] 8 질문 답변 후 "확정" 발화 → 이 CLAUDE.md 의 "비전 / 사양" 자동 합성 + `onboarded: true`
 - [ ] `AGENTS.md` 의 검증 명령 채우고 로컬에서 1회 exit 0 확인
 - [ ] ralph-loop 시작:

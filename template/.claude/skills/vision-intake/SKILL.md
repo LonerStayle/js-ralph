@@ -1,10 +1,10 @@
 ---
-name: onboarding
-description: 대표님 첫 진입 시 인사 → 8 질문 인터뷰 → CLAUDE.md 의 "비전 / 사양" 섹션 합성 → 동결. CLAUDE.md frontmatter 의 onboarded 가 false 일 때 자동 트리거.
+name: vision-intake
+description: 대표님 첫 진입 시 인사 → 8 질문 비전 인터뷰 → CLAUDE.md 의 "비전 / 사양" 섹션 합성 → 동결. CLAUDE.md 의 onboarded 가 false 일 때 자동 트리거. (Claude Code 빌트인 onboarding 과 다른 별도 skill)
 model: sonnet
 ---
 
-# onboarding
+# vision-intake
 
 > v2 의 `master-spec` / `manifest` / `chunks` framework 는 폐기.
 > v3-classic 정밀화: vision 은 별도 파일(`specs/vision*` 등)이 아니라 **이 하네스의 CLAUDE.md 안에 직접** 합성한다 (Claude Code 자동 로드 활용).
@@ -13,7 +13,7 @@ model: sonnet
 
 ## 트리거 조건
 
-ralph 가 매 iteration 진입 시 `CLAUDE.md` 를 자동 로드한다. 그 안 frontmatter 또는 `## 🔒 onboarding 상태` 섹션의 `onboarded` 값을 확인:
+ralph 가 매 iteration 진입 시 `CLAUDE.md` 를 자동 로드한다. 그 안 frontmatter 또는 `## 🔒 비전 인터뷰 상태` 섹션의 `onboarded` 값을 확인:
 
 - `onboarded: false` 또는 부재 → 이 skill 호출 (인터뷰 시작)
 - `onboarded: true` → 이 skill 호출하지 않음. PROMPT.md 의 매 iteration 절차로 직접 진입
@@ -60,10 +60,10 @@ ralph 가 매 iteration 진입 시 `CLAUDE.md` 를 자동 로드한다. 그 안 
 
 ## 4단계 — CLAUDE.md 합성
 
-Edit 도구로 `CLAUDE.md` 의 **"비전 / 사양 (대표님 영역 — onboarding 이 채움)"** 섹션 아래 8개 `### N. ...` 자리의 `*(미입력...)*` 텍스트를 답변으로 갈아끼운다.
+Edit 도구로 `CLAUDE.md` 의 **"비전 / 사양 (대표님 영역 — vision-intake 가 채움)"** 섹션 아래 8개 `### N. ...` 자리의 `*(미입력...)*` 텍스트를 답변으로 갈아끼운다.
 
 **손대지 않을 영역**:
-- `## 🔒 onboarding 상태` 의 frontmatter (5단계에서 다룸)
+- `## 🔒 비전 인터뷰 상태` 의 frontmatter (5단계에서 다룸)
 - `## 공통 — ...` 으로 시작하는 모든 섹션 (factory 가 박은 공통 부분)
 
 작성 후 대표님께 안내:
@@ -85,7 +85,7 @@ Edit 도구로 `CLAUDE.md` 의 **"비전 / 사양 (대표님 영역 — onboardi
 
 ### 동결 실행 절차
 
-1. Edit 도구로 `CLAUDE.md` 의 `## 🔒 onboarding 상태` 섹션 yaml 블록 갱신:
+1. Edit 도구로 `CLAUDE.md` 의 `## 🔒 비전 인터뷰 상태` 섹션 yaml 블록 갱신:
    ```yaml
    onboarded: true
    onboarded_at: <현재 ISO 8601>
@@ -106,5 +106,5 @@ Edit 도구로 `CLAUDE.md` 의 **"비전 / 사양 (대표님 영역 — onboardi
 
 - 이 skill 은 **1회성**이다. `onboarded: true` 이후 다시 호출되면 "이미 onboarded 된 CLAUDE.md 가 있습니다" 만 출력하고 종료.
 - 재인터뷰가 필요하면 대표님이 `CLAUDE.md` 의 `onboarded` 를 `false` 로 직접 토글 후 세션 재시작.
-- `specs/*` 파일은 onboarding 이 생성하지 않는다. 도메인 추가 사양 (api/ui/data 등) 이 필요하면 대표님이 동결 후 직접 추가하거나, ralph 가 첫 iteration 에서 비전 기준으로 초안 제안 가능.
+- `specs/*` 파일은 vision-intake 가 생성하지 않는다. 도메인 추가 사양 (api/ui/data 등) 이 필요하면 대표님이 동결 후 직접 추가하거나, ralph 가 첫 iteration 에서 비전 기준으로 초안 제안 가능.
 - 별도 vision 파일 (예: `specs/vision*`, `master-spec*`) 또는 `manifest*` / `chunks/` / `cycles/` 는 생성하지 마라. vision 은 CLAUDE.md 가 단일 출처다.

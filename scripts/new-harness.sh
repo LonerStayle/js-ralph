@@ -69,7 +69,7 @@ echo
 echo "  1) cd $DEST"
 echo
 echo "  2) claude"
-echo "     - ralph 가 CLAUDE.md 의 onboarded:false 를 감지하고 자동으로 onboarding 인터뷰 시작"
+echo "     - ralph 가 CLAUDE.md 의 onboarded:false 를 감지하고 vision-intake skill (비전 인터뷰) 을 자동 호출"
 echo "     - 8 질문 답변 → CLAUDE.md 의 '비전 / 사양' 8 항목 자동 합성"
 echo "     - '확정' / 'OK' / '진행해' 발화 → onboarded:true 동결"
 echo

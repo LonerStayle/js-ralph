@@ -21,7 +21,7 @@ Geoffrey Huntley 의 오리지널 Ralph Wiggum 패턴 + 대표님 호칭 톤.
 
 | 파일 | 무엇 | 누가 |
 |------|------|------|
-| `CLAUDE.md` | 비전 + 환경 컨텍스트 + 호칭 톤 (Claude Code 자동 로드) | onboarding 자동 합성 |
+| `CLAUDE.md` | 비전 + 환경 컨텍스트 + 호칭 톤 (Claude Code 자동 로드) | vision-intake skill 자동 합성 |
 | `PROMPT.md` | ralph 행동 매뉴얼 (도구 중립) | factory 박음 + 표지판 누적 |
 | `AGENTS.md` | 빌드/검증 명령 (60줄 이하) | 대표님 또는 ralph 첫 iteration |
 | `IMPLEMENTATION_PLAN.md` | TODO 체크리스트 | ralph 99% 자동 |
@@ -34,7 +34,7 @@ Geoffrey Huntley 의 오리지널 Ralph Wiggum 패턴 + 대표님 호칭 톤.
 | # | 원칙 | factory 가 박는 강제 메커니즘 |
 |---|------|--------------------------------|
 | 1 | 단일 prompt + 자기 재투입 루프 | ralph-loop 플러그인 Stop hook (사용자 설치) |
-| 2 | 사람이 작성한 파일 spec | template/CLAUDE.md 의 비전 섹션 (onboarding 합성 후 동결, `onboarded: true`) |
+| 2 | 사람이 작성한 파일 spec | template/CLAUDE.md 의 비전 섹션 (vision-intake skill 합성 후 동결, `onboarded: true`) |
 | 3 | fresh context 매 iteration | ralph-loop 기본 동작 + CLAUDE.md 자동 로드 |
 | 4 | deterministic backpressure | template/AGENTS.md 의 lint/typecheck/tests |
 
@@ -52,7 +52,7 @@ Geoffrey Huntley 의 오리지널 Ralph Wiggum 패턴 + 대표님 호칭 톤.
 
 ## 기본 기술 스택 (factory 디폴트)
 
-명시적 다른 지시 없으면 이 조합으로 진행한다. eject 후 onboarding 8번째 질문에서 override 가능.
+명시적 다른 지시 없으면 이 조합으로 진행한다. eject 후 vision-intake 8번째 질문에서 override 가능.
 
 | 영역 | 기본 |
 |------|------|
@@ -78,7 +78,7 @@ js-ralph/
     specs/.gitkeep
     .claude/
       settings.json
-      skills/onboarding/SKILL.md
+      skills/vision-intake/SKILL.md     (Claude Code 빌트인 onboarding 과 충돌 회피 위해 vision-intake 로 명명)
     VERSION                      (현재 3)
   scripts/
     new-harness.sh               template → ejected 하네스 복제 + git init
@@ -118,4 +118,4 @@ js-ralph/
 - [ ] `bash scripts/verify-v3-template.sh` → [PASS]
 - [ ] `bash scripts/new-harness.sh <NAME>` → eject 성공
 - [ ] eject 안내 메시지가 v3-classic 흐름과 일치하는지 확인
-- [ ] (선택) ejected 하네스에서 onboarding 1회 돌려서 sanity 확인
+- [ ] (선택) ejected 하네스에서 vision-intake skill 1회 돌려서 sanity 확인

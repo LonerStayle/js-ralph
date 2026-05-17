@@ -28,10 +28,12 @@ cd ~/jinsup_ralph/{{PROJECT_NAME}}
 claude
 ```
 
-ralph 가 `CLAUDE.md` 의 `onboarded: false` 를 감지하고 즉시 onboarding 인터뷰를 시작합니다:
+ralph 가 `CLAUDE.md` 의 `onboarded: false` 를 감지하고 `vision-intake` skill (비전 인터뷰) 을 즉시 시작합니다:
 **"대표님 안녕하십니까. 8 가지 질문을 드리겠습니다."**
 
-### 2) onboarding 8 질문 답변 → CLAUDE.md 의 "비전 / 사양" 자동 합성
+> ⚠️ skill 이름은 `vision-intake` 입니다 (Claude Code 빌트인 `onboarding` skill 과 충돌 회피).
+
+### 2) vision-intake 8 질문 답변 → CLAUDE.md 의 "비전 / 사양" 자동 합성
 
 | 질문 | 내용 |
 |------|------|
@@ -70,7 +72,7 @@ ralph 가 `PROJECT_DONE` 를 출력하고 종료하면 결과물을 직접 검�
 
 | 파일 | 누가 | 무엇 |
 |------|------|------|
-| **`CLAUDE.md`** | factory + onboarding 자동 합성 | 비전·사양 + 환경 컨텍스트 + 호칭 톤 (Claude Code 자동 로드) |
+| **`CLAUDE.md`** | factory + vision-intake 자동 합성 | 비전·사양 + 환경 컨텍스트 + 호칭 톤 (Claude Code 자동 로드) |
 | `PROMPT.md` | factory + 표지판 누적 | ralph 행동 매뉴얼 (도구 중립) |
 | `AGENTS.md` | 대표님 또는 ralph 첫 iteration | 빌드/검증 명령 (60줄 이하) |
 | `IMPLEMENTATION_PLAN.md` | ralph 99% 자동 | TODO 체크리스트 |
@@ -82,7 +84,7 @@ ralph 가 `PROJECT_DONE` 를 출력하고 종료하면 결과물을 직접 검�
 
 | 시점 | 내용 | 횟수 |
 |------|------|------|
-| onboarding | 8 질문 답변 | ~8 회 |
+| vision-intake (비전 인터뷰) | 8 질문 답변 | ~8 회 |
 | 동결 | "확정" 발화 → `onboarded: true` | 1 회 |
 | AGENTS.md 검증 명령 채우기 | (또는 ralph 가 채워도 됨) | 0~1 회 |
 | 표지판 추가 | ralph 가 실수 반복 시 PROMPT.md `<!-- signs -->` 아래 한 줄 | 0~N 회 |

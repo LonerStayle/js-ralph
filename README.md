@@ -27,14 +27,16 @@ bash scripts/new-harness.sh <NAME>
 /plugin install ralph-loop
 ```
 
-### 3) ejected 하네스에서 onboarding 시작
+### 3) ejected 하네스에서 vision-intake 시작
 
 ```bash
 cd ~/jinsup_ralph/<NAME>
 claude
 ```
 
-→ Claude Code 가 `CLAUDE.md` 를 자동 로드, `onboarded: false` 를 감지 → ralph 가 자동으로 8 질문 onboarding 인터뷰 시작.
+→ Claude Code 가 `CLAUDE.md` 를 자동 로드, `onboarded: false` 를 감지 → ralph 가 자동으로 `vision-intake` skill (8 질문 비전 인터뷰) 호출.
+
+> ⚠️ skill 이름은 `vision-intake` 입니다 (Claude Code 빌트인 `onboarding` skill 과 충돌 회피).
 
 답변 후 `CLAUDE.md` 의 "비전 / 사양" 8 항목이 자동 합성됨.
 대표님이 **"확정"** 발화하면 `onboarded: true` + 타임스탬프 박힘.
@@ -42,7 +44,7 @@ claude
 ### 4) AGENTS.md 검증 명령 채우고 ralph-loop 시작
 
 ```
-/ralph-loop "Read PROMPT.md and follow it." --completion-promise "<promise>PROJECT_DONE</promise>" --max-iterations 300
+/ralph-loop:ralph-loop "Read PROMPT.md and follow it." --completion-promise "PROJECT_DONE" --max-iterations 150
 ```
 
 자세한 흐름은 ejected 하네스의 `README.md` 참조.
@@ -68,7 +70,7 @@ claude
 | # | 원칙 | 구현 |
 |---|------|------|
 | 1 | 단일 prompt + 자기 재투입 루프 | ralph-loop 플러그인 Stop hook |
-| 2 | 사람이 작성한 파일 spec | template/CLAUDE.md 비전 섹션 (onboarding 합성 + 동결) |
+| 2 | 사람이 작성한 파일 spec | template/CLAUDE.md 비전 섹션 (vision-intake skill 합성 + 동결) |
 | 3 | fresh context 매 iteration | ralph-loop 기본 + CLAUDE.md 자동 로드 |
 | 4 | deterministic backpressure | template/AGENTS.md lint/typecheck/tests |
 
@@ -83,7 +85,7 @@ claude
 | Mobile App | Android (Kotlin) — iOS / Flutter 의도적 포기 |
 | Database | Postgres |
 
-대표님이 onboarding 8번째 질문에서 override 가능.
+대표님이 vision-intake 8번째 질문에서 override 가능.
 
 ---
 
@@ -92,7 +94,7 @@ claude
 | 시점 | 내용 | 횟수 |
 |------|------|------|
 | (1회) plugin 설치 | `/plugin install ralph-loop` | 1 |
-| onboarding | 8 질문 답변 | ~8 |
+| vision-intake (비전 인터뷰) | 8 질문 답변 | ~8 |
 | 동결 | "확정" 발화 → `onboarded: true` | 1 |
 | AGENTS.md 채우기 | 대표님 또는 ralph 첫 iteration | 0~1 |
 | 표지판 추가 | ralph 가 실수 반복 시 PROMPT.md `<!-- signs -->` 아래 | 0~N |
@@ -111,7 +113,7 @@ js-ralph/
 │   ├── CLAUDE.md  PROMPT.md  AGENTS.md  IMPLEMENTATION_PLAN.md
 │   ├── specs/.gitkeep
 │   ├── .claude/settings.json
-│   ├── .claude/skills/onboarding/SKILL.md
+│   ├── .claude/skills/vision-intake/SKILL.md   (built-in onboarding 충돌 회피)
 │   └── VERSION            (3)
 ├── scripts/
 │   ├── new-harness.sh             template → ejected 하네스 복제

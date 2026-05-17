@@ -7,13 +7,13 @@
 #     template/VERSION  (내용 == 3)
 #     template/specs/  (디렉토리, vision.* 파일은 없어야)
 #     template/.claude/settings.json
-#     template/.claude/skills/onboarding/SKILL.md
+#     template/.claude/skills/vision-intake/SKILL.md
 #   부재 (v2 잔재 폐기 확인):
 #     template/.claude/{agents,commands,state,hooks,config,scripts}/
 #     template/HANDOFF.md
 #     template/specs/vision.*  (비전은 CLAUDE.md 가 단일 출처)
-#   skills/ 안에 onboarding 하나만 존재
-#   호칭 분리: PROMPT/AGENTS/PLAN 도구 중립, CLAUDE/README/onboarding 본거지
+#   skills/ 안에 vision-intake 하나만 존재 (Claude Code 빌트인 onboarding 과 충돌 회피)
+#   호칭 분리: PROMPT/AGENTS/PLAN 도구 중립, CLAUDE/README/vision-intake 본거지
 #   settings.json 에 hooks 섹션 없음 + Edit(CLAUDE.md) 권한 명시
 #   CLAUDE.md gating: "onboarded:" 키 존재 + "### 1.~### 8." 8 항목 placeholder
 
@@ -37,7 +37,7 @@ for path in \
   "CLAUDE.md" "README.md" "VERSION" \
   ".gitignore" \
   ".claude/settings.json" \
-  ".claude/skills/onboarding/SKILL.md"
+  ".claude/skills/vision-intake/SKILL.md"
 do
   if [ -e "$T/$path" ]; then pass "$path"; else fail "missing: $path"; fi
 done
@@ -61,13 +61,13 @@ else
   fail "vision leaked into specs/: $(ls "$T/specs"/vision.* 2>/dev/null)"
 fi
 
-# 3. skills/ 안엔 onboarding 만
+# 3. skills/ 안엔 vision-intake 만 (onboarding 이라는 이름은 Claude Code 빌트인과 충돌하므로 금지)
 echo
-echo "[3] skills/ contains only onboarding"
+echo "[3] skills/ contains only vision-intake"
 if [ -d "$T/.claude/skills" ]; then
   skill_entries=$(ls -1 "$T/.claude/skills" 2>/dev/null | sort | tr '\n' ' ')
-  if [ "$(echo "$skill_entries" | tr -d ' ')" = "onboarding" ]; then
-    pass "skills entries = onboarding"
+  if [ "$(echo "$skill_entries" | tr -d ' ')" = "vision-intake" ]; then
+    pass "skills entries = vision-intake"
   else
     fail "skills/ has unexpected entries: $skill_entries"
   fi
@@ -83,7 +83,7 @@ if [ "$v" = "3" ]; then pass "VERSION = 3"; else fail "VERSION = '$v' (expected 
 
 # 5. 대표님 호칭 분리 검증
 #    - PROMPT.md / AGENTS.md / IMPLEMENTATION_PLAN.md 는 도구 중립이어야 함 (대표님 부재)
-#    - CLAUDE.md / README.md / onboarding SKILL 에는 박혀 있어야 함
+#    - CLAUDE.md / README.md / vision-intake SKILL 에는 박혀 있어야 함
 echo
 echo "[5] 대표님 호칭 분리 (CLAUDE 본거지, PROMPT 도구 중립)"
 for f in "PROMPT.md" "AGENTS.md" "IMPLEMENTATION_PLAN.md"; do
@@ -93,7 +93,7 @@ for f in "PROMPT.md" "AGENTS.md" "IMPLEMENTATION_PLAN.md"; do
     pass "tool-neutral: $f"
   fi
 done
-for f in "CLAUDE.md" "README.md" ".claude/skills/onboarding/SKILL.md"; do
+for f in "CLAUDE.md" "README.md" ".claude/skills/vision-intake/SKILL.md"; do
   if grep -q "대표님" "$T/$f" 2>/dev/null; then
     pass "대표님 in $f"
   else
@@ -148,19 +148,25 @@ else
   fail "settings.json missing Edit(CLAUDE.md)"
 fi
 
-# 10. onboarding skill references CLAUDE.md not vision.md
+# 10. vision-intake skill references CLAUDE.md not vision.md
 echo
-echo "[10] onboarding skill targets CLAUDE.md"
-sk="$T/.claude/skills/onboarding/SKILL.md"
+echo "[10] vision-intake skill targets CLAUDE.md"
+sk="$T/.claude/skills/vision-intake/SKILL.md"
 if grep -q "CLAUDE.md" "$sk"; then
-  pass "onboarding references CLAUDE.md"
+  pass "vision-intake references CLAUDE.md"
 else
-  fail "onboarding SKILL.md missing CLAUDE.md reference"
+  fail "vision-intake SKILL.md missing CLAUDE.md reference"
 fi
 if grep -q "specs/vision.md" "$sk"; then
-  fail "onboarding still references specs/vision.md (must target CLAUDE.md)"
+  fail "vision-intake still references specs/vision.md (must target CLAUDE.md)"
 else
   pass "no specs/vision.md reference"
+fi
+# 10b. frontmatter name 이 vision-intake 인지 (built-in onboarding 과의 충돌 회피)
+if grep -qE "^name:[[:space:]]*vision-intake[[:space:]]*$" "$sk"; then
+  pass "SKILL.md frontmatter name = vision-intake"
+else
+  fail "SKILL.md frontmatter name must be 'vision-intake' (avoid built-in onboarding collision)"
 fi
 
 echo
