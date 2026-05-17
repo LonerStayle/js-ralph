@@ -95,7 +95,7 @@ Edit 도구로 `CLAUDE.md` 의 **"비전 / 사양 (대표님 영역 — onboardi
    대표님, CLAUDE.md 가 동결되었습니다.
    이제 ralph-loop 를 시작해 주시면 자율 진행하겠습니다.
 
-     /ralph-loop "Read PROMPT.md and follow it." --completion-promise "<promise>PROJECT_DONE</promise>" --max-iterations 300
+     /ralph-loop "Read PROMPT.md and follow it." --completion-promise "PROJECT_DONE" --max-iterations 150
 
    첫 iteration 에서 AGENTS.md 검증 명령이 비어 있으면 AGENTS.md 채움부터 진행합니다.
    ```

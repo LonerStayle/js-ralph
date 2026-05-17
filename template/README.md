@@ -53,7 +53,7 @@ ralph 가 `CLAUDE.md` 의 `onboarded: false` 를 감지하고 즉시 onboarding 
 ### 4) ralph-loop 시작
 
 ```
-/ralph-loop "Read PROMPT.md and follow it." --completion-promise "<promise>PROJECT_DONE</promise>" --max-iterations 300
+/ralph-loop "Read PROMPT.md and follow it." --completion-promise "PROJECT_DONE" --max-iterations 150
 ```
 
 - 매 iteration ralph 가 fresh context 로 `CLAUDE.md` (자동 로드) + `PROMPT.md` (명령에 의해 Read) 를 입력으로 받습니다
@@ -62,7 +62,7 @@ ralph 가 `CLAUDE.md` 의 `onboarded: false` 를 감지하고 즉시 onboarding 
 
 ### 5) PROJECT_DONE 검토 (마지막 1회)
 
-ralph 가 `<promise>PROJECT_DONE</promise>` 를 출력하고 종료하면 결과물을 직접 검토.
+ralph 가 `PROJECT_DONE` 를 출력하고 종료하면 결과물을 직접 검토.
 
 ---
 

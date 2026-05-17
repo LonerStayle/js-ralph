@@ -78,8 +78,8 @@ echo "     로컬에서 직접 1회 돌려 모두 exit 0 확인 (ralph 의 backp
 echo
 echo "  4) ralph-loop 자율 진행 시작:"
 echo "     /ralph-loop 'Read PROMPT.md and follow it.' \\"
-echo "       --completion-promise '<promise>PROJECT_DONE</promise>' \\"
-echo "       --max-iterations 300"
+echo "       --completion-promise 'PROJECT_DONE' \\"
+echo "       --max-iterations 150"
 echo
 echo "remote (선택):"
 echo "  gh repo create $NAME --private --source=. --remote=origin --push"

@@ -33,7 +33,7 @@ IMPLEMENTATION_PLAN.md 에 미완 [ ] task 가 있나?
 
 모든 vision / spec 항목이 plan 에 반영되어 있고 전부 [x]?
   → "PROJECT_DONE" 보고 + 종료
-  → 종료 메시지 끝줄에 정확히: <promise>PROJECT_DONE</promise>
+  → 종료 메시지 끝줄에 정확히: PROJECT_DONE
 ```
 
 > "vision / spec" 의 출처는 환경에 따라 다르다 — Claude Code 환경이면 CLAUDE.md 의 비전 섹션, Geoffrey 원조면 specs/*. 어느 쪽이든 ralph 의 fresh context 에 자동/Read 로 로드된 사양 전체를 의미.

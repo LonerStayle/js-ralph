@@ -86,7 +86,7 @@ onboarded_at: null
 ```
 
 종료 조건:
-- 모든 비전 항목이 plan 에 반영되고 전부 `[x]` → `<promise>PROJECT_DONE</promise>` 출력
+- 모든 비전 항목이 plan 에 반영되고 전부 `[x]` → `PROJECT_DONE` 출력
 - `--max-iterations` 도달
 - 대표님 명시 정지
 
@@ -110,7 +110,7 @@ onboarded_at: null
 
 ### 대표님 개입 시점 (2회)
 1. **시작**: onboarding 8 질문 답변 → 위 "비전 / 사양" 자동 합성 → "확정" 발화로 동결
-2. **끝**: ralph 가 `<promise>PROJECT_DONE</promise>` 출력 후 결과물 검토
+2. **끝**: ralph 가 `PROJECT_DONE` 출력 후 결과물 검토
 
 ---
 
@@ -136,7 +136,7 @@ onboarded_at: null
 - [ ] `AGENTS.md` 의 검증 명령 채우고 로컬에서 1회 exit 0 확인
 - [ ] ralph-loop 시작:
   ```
-  /ralph-loop "Read PROMPT.md and follow it." --completion-promise "<promise>PROJECT_DONE</promise>" --max-iterations 300
+  /ralph-loop "Read PROMPT.md and follow it." --completion-promise "PROJECT_DONE" --max-iterations 150
   ```
 - [ ] 첫 iteration 끝나고 `IMPLEMENTATION_PLAN.md` 에 `[ ]` 가 누적되는지 확인
 
