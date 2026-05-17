@@ -64,12 +64,22 @@ echo
 echo "[ok] harness ejected to: $DEST"
 echo "[ok] git initialized on branch '$BRANCH', initial commit created"
 echo
-echo "next:"
-echo "  cd $DEST"
-echo "  claude                       # onboarding 8 질문 → specs/vision.md 동결"
-echo "  # 그 다음 AGENTS.md 의 lint/typecheck/tests 명령을 도메인에 맞게 채우고"
-echo "  # 로컬에서 1회 돌려 모두 exit 0 확인"
-echo "  /loop                        # ralph-loop 자율 진행 시작"
+echo "next steps (v3-classic):"
+echo
+echo "  1) cd $DEST"
+echo
+echo "  2) claude"
+echo "     - ralph 가 CLAUDE.md 의 onboarded:false 를 감지하고 자동으로 onboarding 인터뷰 시작"
+echo "     - 8 질문 답변 → CLAUDE.md 의 '비전 / 사양' 8 항목 자동 합성"
+echo "     - '확정' / 'OK' / '진행해' 발화 → onboarded:true 동결"
+echo
+echo "  3) AGENTS.md 의 lint/typecheck/tests 명령을 도메인에 맞게 채움"
+echo "     로컬에서 직접 1회 돌려 모두 exit 0 확인 (ralph 의 backpressure)"
+echo
+echo "  4) ralph-loop 자율 진행 시작:"
+echo "     /ralph-loop 'Read PROMPT.md and follow it.' \\"
+echo "       --completion-promise '<promise>PROJECT_DONE</promise>' \\"
+echo "       --max-iterations 300"
 echo
 echo "remote (선택):"
 echo "  gh repo create $NAME --private --source=. --remote=origin --push"
