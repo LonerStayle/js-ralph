@@ -1,0 +1,9 @@
+{
+  "name": "js-ralph",
+  "version": "0.1.0",
+  "description": "Claude Code 플러그인 — v3-classic ralph 하네스 셋업 + vision-intake 비전 인터뷰 + ralph-loop 자동 시작 게이트.",
+  "author": {
+    "name": "Jinsup Choi",
+    "email": "dlwlstjq410@gmail.com"
+  }
+}
