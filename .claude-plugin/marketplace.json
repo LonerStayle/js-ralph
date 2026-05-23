@@ -1,0 +1,12 @@
+  {
+    "name": "lonerstayle",
+    "owner": { "name": "LonerStayle", "email": "dlwlstjq410@gmail.com" },
+    "plugins": [
+      {
+        "name": "js-ralph",
+        "source": "github:LonerStayle/js-ralph@v1.0.0",
+        "description": "v3-classic ralph 하네스 자동 셋업 + vision-intake 비전 인터뷰",
+        "version": "1.0.0"
+      }
+    ]
+  }
