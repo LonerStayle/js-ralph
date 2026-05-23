@@ -32,6 +32,7 @@ IMPLEMENTATION_PLAN.md 에 미완 [ ] task 가 있나?
   NO  → §4 (plan 보강) 으로.
 
 모든 vision / spec 항목이 plan 에 반영되어 있고 전부 [x]?
+  → §8 절차로 SETUP.html 을 생성/갱신
   → "PROJECT_DONE" 보고 + 종료
   → 종료 메시지 끝줄에 정확히: PROJECT_DONE
 ```
@@ -80,3 +81,32 @@ ralph 가 같은 실수를 반복하면 사용자가 이 섹션 끝에 한 줄�
 
 <!-- signs -->
 <!-- 예) "DB 마이그레이션 추가 시 항상 down 도 작성하라" -->
+
+---
+
+## 8. PROJECT_DONE 직전 산출물 — `SETUP.html`
+
+§2 의 PROJECT_DONE 조건이 충족돼 종료 보고 직전, 프로젝트 루트의 `SETUP.html` 을 통째 덮어쓴다. 사용자가 코드 바깥에서 직접 세팅해야 하는 것들을 한 페이지에 모은 인수인계서.
+
+**포함 카테고리** (도메인에 해당하는 것만 — 빈 카테고리는 생략):
+
+- **환경변수**: 이름 / 의미 / 발급처 URL / 예시값 (실제 secret X)
+- **외부 인프라**: Supabase / Vercel / Cloud / GitHub repo / DNS / S3·R2 / API key 발급처
+- **DB / Storage**: 마이그레이션 적용 순서, RLS 정책, seed 데이터, 백업 설정
+- **Cron / 스케줄러**: 어디서 어떻게 등록 (Vercel Cron / GitHub Actions / OS cron)
+- **모니터링·알림**: Sentry / Slack webhook / email
+- **운영 메모**: 첫 실행 절차, 일상 운영 시 자주 보는 명령
+
+**형식 규칙**:
+
+- 단일 HTML 파일 (외부 의존 0 — inline `<style>`, 인터넷 없어도 열림)
+- 카테고리별 `<section>` + 체크박스 가능
+- 한 페이지 안에서 인쇄 친화적으로 보이도록
+- 도메인에 없는 카테고리는 생략 (체크박스 0 개의 빈 섹션 X)
+- 보기 좋게 — 깔끔한 색, 적절한 spacing, mono 폰트 변수명에
+
+**갱신 정책**:
+
+- 매번 통째 덮어쓰기 (마지막 상태 = 진실)
+- PROJECT_DONE 출력 직전 1 회만 (매 iteration 갱신 X — 토큰 낭비)
+- AGENTS.md 검증 명령으로 잡히지 않으므로, 누락 시 사용자가 §7 표지판으로 알려줌
