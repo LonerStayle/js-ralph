@@ -1,7 +1,6 @@
 ---
 name: vision-intake
 description: 대표님 첫 진입 시 인사 → 8 질문 비전 인터뷰 → CLAUDE.md 의 "비전 / 사양" 섹션 합성 → 동결. CLAUDE.md 의 onboarded 가 false 일 때 자동 트리거. (Claude Code 빌트인 onboarding 과 다른 별도 skill)
-model: sonnet
 ---
 
 # vision-intake
