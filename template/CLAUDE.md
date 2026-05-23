@@ -4,7 +4,7 @@
 이 파일은 **자가완결**이다 — 부모 저장소를 참조하지 않는다.
 Claude Code 가 매 세션 자동 로드하므로, ralph 의 매 iteration fresh context 에 항상 포함된다.
 
----
+--- 
 
 ## 🔒 비전 인터뷰 상태 (gating)
 
