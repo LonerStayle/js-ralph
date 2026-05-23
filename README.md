@@ -1,53 +1,45 @@
 # js-ralph
 
-ralph 하네스 공장 (v3-classic). 새 하네스를 template 에서 외부 디렉토리로 eject 한다.
-이 저장소는 직접 ralph 루프를 돌리지 않는다.
+**Claude Code 플러그인** — `/setup-ralph` 슬래시 한 번에 v3-classic ralph 하네스를 현재 디렉토리에 박고 vision-intake 비전 인터뷰를 즉시 시작합니다.
 
 > v3-classic = Geoffrey Huntley 의 오리지널 Ralph Wiggum 패턴 + Claude Code 의 CLAUDE.md 자동 로드 활용 + 대표님 호칭 톤.
-> v2 framework 폐기 의사결정 전문: `HANDOFF.md`.
+> 옛 factory 모델 (`template/` + `bash scripts/new-harness.sh`) 은 `pre-plugin` 브랜치에 통째 보존됨. 필요 시 `git checkout pre-plugin`.
 
 ---
 
 ## 빠른 시작
 
-### 1) 새 하네스 만들기
-
-```bash
-bash scripts/new-harness.sh <NAME>
-```
-
-→ `~/jinsup_ralph/<NAME>/` 로 ejected. 자체 git 저장소 (`main` 브랜치 + 초기 commit) 자동 생성.
-
-`RALPH_HOME` 환경변수로 위치 변경 가능 (기본 `$HOME/jinsup_ralph`).
-
-### 2) (1회 설치) ralph-loop 플러그인
+### 1) (1회) 플러그인 설치
 
 ```
 # Claude Code 안에서 한 번:
+/plugin install js-ralph
 /plugin install ralph-loop
 ```
 
-### 3) ejected 하네스에서 vision-intake 시작
+### 2) 새 ralph 프로젝트 시작
 
 ```bash
-cd ~/jinsup_ralph/<NAME>
+mkdir ~/my-new-project && cd ~/my-new-project
 claude
 ```
 
-→ Claude Code 가 `CLAUDE.md` 를 자동 로드, `onboarded: false` 를 감지 → ralph 가 자동으로 `vision-intake` skill (8 질문 비전 인터뷰) 호출.
-
-> ⚠️ skill 이름은 `vision-intake` 입니다 (Claude Code 빌트인 `onboarding` skill 과 충돌 회피).
-
-답변 후 `CLAUDE.md` 의 "비전 / 사양" 8 항목이 자동 합성됨.
-대표님이 **"확정"** 발화하면 `onboarded: true` + 타임스탬프 박힘.
-
-### 4) AGENTS.md 검증 명령 채우고 ralph-loop 시작
+### 3) Claude Code 안에서
 
 ```
-/ralph-loop:ralph-loop "Read PROMPT.md and follow it." --completion-promise "PROJECT_DONE" --max-iterations 150
+/setup-ralph
 ```
 
-자세한 흐름은 ejected 하네스의 `README.md` 참조.
+→ 5파일 (CLAUDE.md / PROMPT.md / AGENTS.md / IMPLEMENTATION_PLAN.md / README.md) + 부속 파일이 박히고, vision-intake 비전 인터뷰 (8 질문) 가 즉시 시작됩니다.
+
+대표님 답변 → "확정" 발화 → `onboarded: true` 동결 → FR-7 자동 시작 게이트 ("ralph-loop 자동 시작?" yes/no) → yes 면 ralph-loop 즉시 활성.
+
+### 옵션: 기존 코드 위에 overlay 모드
+
+```
+/setup-ralph --overlay         # 기존 5파일 충돌은 .v2.bak 으로 백업
+/setup-ralph --overlay --force # onboarded:true CLAUDE.md 도 덮어쓰기 (위험)
+```
 
 ---
 

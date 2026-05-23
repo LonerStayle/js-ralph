@@ -1,10 +1,10 @@
-# CLAUDE.md — js-ralph factory
+# CLAUDE.md — js-ralph (Claude Code 플러그인)
 
-이 프로젝트(`js-ralph`)는 **ralph 하네스 공장**이다. 직접 ralph 실행 환경을 운영하지 않고 template + eject 스크립트만 보유한다.
+이 저장소(`js-ralph`)는 **Claude Code 플러그인 `js-ralph` 의 개발/배포 저장소** 다. 직접 ralph 실행 환경을 운영하지 않는다.
 
-새 하네스는 `template/` 을 복제하여 외부 디렉토리 `${RALPH_HOME:-$HOME/jinsup_ralph}/<name>/` 로 eject 된다. eject 된 순간 자체 git 저장소 (`git init -b main` 자동, 초기 commit 자동).
+새 ralph 하네스를 만들려면 Claude Code 에서 `/setup-ralph` 슬래시를 한 번 실행하면 된다 — 플러그인이 동봉한 5파일이 현재 디렉토리에 박히고 vision-intake 비전 인터뷰가 즉시 시작된다.
 
-→ factory 안에는 실제 하네스 인스턴스가 살지 않는다. `harness-ralph/` 폴더는 **사용하지 않는다** (의도적으로 비어 있음).
+> 옛 factory 모델 (`template/` 폴더 + `bash scripts/new-harness.sh`) 은 `pre-plugin` 브랜치 (`b8fb626`) 에 통째 보존되어 있다. 필요 시 `git checkout pre-plugin` 으로 fallback 가능.
 
 ---
 
@@ -66,39 +66,35 @@ Geoffrey Huntley 의 오리지널 Ralph Wiggum 패턴 + 대표님 호칭 톤.
 
 ---
 
-## factory 디렉토리 구조
+## 저장소 디렉토리 구조 (js-ralph 플러그인)
 
 ```
 js-ralph/
-  CLAUDE.md                      이 파일 (factory 메타)
-  README.md                      사람용 사용 가이드
-  HANDOFF.md                     다음 세션 인수인계 (의사결정 기록)
-  template/                      모든 하네스의 원본 (v3-classic)
-    CLAUDE.md  PROMPT.md  AGENTS.md  IMPLEMENTATION_PLAN.md
-    specs/.gitkeep
-    .claude/
-      settings.json
-      skills/vision-intake/SKILL.md     (Claude Code 빌트인 onboarding 과 충돌 회피 위해 vision-intake 로 명명)
-    VERSION                      (현재 3)
+  .claude-plugin/plugin.json     플러그인 manifest (name=js-ralph)
+  commands/setup-ralph.md        /setup-ralph 슬래시 entry
   scripts/
-    new-harness.sh               template → ejected 하네스 복제 + git init
-    verify-v3-template.sh        template 정적 검증
+    setup-ralph.sh               하네스 박는 본체 bash
+    verify-plugin.sh             플러그인 정적 검증 (11 그룹)
+  assets/template/               5파일 + 부속 (현재 디렉토리에 cp 될 원본)
+    CLAUDE.md  PROMPT.md  AGENTS.md  IMPLEMENTATION_PLAN.md  README.md
+    .claude/settings.json
+    .gitignore  VERSION (=3)  specs/.gitkeep
+  skills/vision-intake/SKILL.md  비전 인터뷰 8 질문 + FR-7 자동 시작 게이트
+  tests/                         bats 단위/통합 테스트
   docs/                          v2 historical + 의사결정 기록 (보존)
-  harness-ralph/                 사용 안 함 (비어 있음, vestigial)
+  HANDOFF.md                     다음 세션 인수인계
+  CLAUDE.md  README.md           이 두 파일 (저장소 메타)
 ```
+
+옛 `template/` / `scripts/new-harness.sh` / `scripts/verify-v3-template.sh` 는 `pre-plugin` 브랜치에 보존.
 
 ---
 
-## eject 결과 위치 (실제 하네스가 사는 곳)
+## ejected 하네스 위치 (사용자가 정함)
 
-```
-~/jinsup_ralph/<project>/        RALPH_HOME 환경변수로 변경 가능
-  .git/                          자체 git 저장소 (main 브랜치, 초기 commit)
-  CLAUDE.md  PROMPT.md  AGENTS.md  IMPLEMENTATION_PLAN.md
-  specs/  .claude/  README.md  VERSION
-```
+`/setup-ralph` 슬래시는 **현재 디렉토리** 에 5파일을 박는다. 옛 모델의 `~/jinsup_ralph/<NAME>/` 강제 위치는 폐기됨 — 어디서든 빈 디렉토리에 가서 `claude` + `/setup-ralph` 한 번이면 됨.
 
-→ ejected 하네스는 독립. factory 갱신은 차후 eject 부터 적용. 이미 ejected 된 하네스 동기화는 사용자가 직접 (template diff 보고 반영).
+이미 ejected 된 8 하네스 (Nova / TtokTtok / PlanB / shortdub / chuljeun-nyang / king_of_law / ai_news_scraping / autoproducts-feature-dev) 는 자체 git 저장소로 독립. 본 플러그인화 갱신은 신규 하네스에만 적용 — 기존 8 하네스 마이그 안 함.
 
 ---
 
