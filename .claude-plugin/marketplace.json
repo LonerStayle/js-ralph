@@ -5,9 +5,8 @@
       {
         "name": "js-ralph",
         "source": {
-          "source": "git-subdir",
+          "source": "url",
           "url": "https://github.com/LonerStayle/js-ralph.git",
-          "path": ".",
           "ref": "v1.0.0"
         },
         "description": "v3-classic ralph 하네스 자동 셋업 + vision-intake 비전 인터뷰",
