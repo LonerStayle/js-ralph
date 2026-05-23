@@ -1417,3 +1417,38 @@ git commit -m "docs(HANDOFF): §13 — js-ralph 플러그인화 완료 기록"
 - **무엇이**: ralph-base-plugin-implementation-plan.md 전체 — frontmatter `commit_policy: per-task`, §1 단계별 작업 12 task (Task 1 bats infra / Task 2 plugin manifest / Task 3 5파일 mv / Task 4 vision-intake FR-7 / Task 5 setup-ralph.sh / Task 6 commands/setup-ralph.md / Task 7 verify-plugin.sh / Task 8 integration bats / Task 9 옛 모델 제거 / Task 10 factory 메타 갱신 / Task 11 정적 검증 게이트 / Task 12 HANDOFF §13), §2 위험 코드 지점 7건 (breaking 3 + side-effect 4), §3 롤백 전략.
 - **영향범위**: 없음 (최초 생성). verifying-spec 4축 보고서 결과: Gaps 0 (소프트 3건 AC-2/7/8 manual 검증 명시), Conflicts 0, 외부 caller 0건, bats coverage 9 파일 / ~30 test. code-pretty: 17 `**수정 후**` 블록 검사 → 0 changes (이미 깨끗). 다운스트림 = `/execute-plan` (task 1~12 실행).
 - **연관 항목**: CH-20260523-001 (PRD), CH-20260523-002 (plugin 이름 정정), CH-20260523-003 (tech-design)
+
+### [2026-05-23 11:50] [코드-수정] (batch: tasks 1..10)
+- **id**: CH-20260523-005
+- **이유**: js-ralph factory → Claude Code 플러그인 재구성 완료. Task 1~10 의 모든 코드 변경을 batch 로 기록 (per-task git commit 으로 audit trail 보존).
+- **무엇이**: 신규 14 파일 (.claude-plugin/plugin.json, commands/setup-ralph.md, scripts/setup-ralph.sh, scripts/verify-plugin.sh, assets/template/* 9파일, skills/vision-intake/SKILL.md), tests/ 9 bats 파일, 제거 2 파일 (scripts/new-harness.sh, scripts/verify-v3-template.sh), 갱신 2 파일 (CLAUDE.md, README.md).
+- **영향범위**: 본 worktree (`플러그인화` 브랜치) 전체. 외부 caller 0건 (옛 잔재 모두 제거됨). 신규 하네스는 본 플러그인 사용, 기존 8 하네스는 영향 X.
+- **위험 카테고리**: breaking 3건 (R-1 overlay 손상, R-4 자연어 인자, R-5 git init 오류) + side-effect 4건 (R-2 sed escape, R-3 ralph-loop 미설치, R-6 path, R-9 잘못된 디렉토리) — 모두 setup-ralph.sh / vision-intake skill 의 가드로 mitigation 완료.
+- **task별 세부 (10건)**:
+  - Task 1: `tests/sanity.bats` — bats 인프라 (none) — commit: `a5e548d`
+  - Task 2: `.claude-plugin/plugin.json` 외 4 stub — manifest + skeleton (none) — commit: `faed685`
+  - Task 3: `template/*` → `assets/template/*` 11파일 git mv, vision-intake skill → `skills/` (none) — commit: `ddbe6af`
+  - Task 4: `skills/vision-intake/SKILL.md` 6단계 자동 시작 게이트 추가 (side-effect: R-3, breaking: R-4) — commit: `79ece99`
+  - Task 5: `scripts/setup-ralph.sh` 본체 + 가드 (breaking: R-1/R-5, side-effect: R-2/R-9) — commit: `8b76785`
+  - Task 6: `commands/setup-ralph.md` 슬래시 entry (none) — commit: `07249a6`
+  - Task 7: `scripts/verify-plugin.sh` 11 검증 그룹 (none) — commit: `3145a12`
+  - Task 8: `tests/integration.bats` AC-1/3/4/5/6 e2e (none) — commit: `d2a1b87`
+  - Task 9: `scripts/new-harness.sh` + `scripts/verify-v3-template.sh` git rm (side-effect: R-7 영향 없음 confirm) — commit: `fb26a65`
+  - Task 10: factory `CLAUDE.md` + `README.md` 본문 갱신 (none) — commit: `bab7b8d`
+- **연관 commits**: `a5e548d..bab7b8d` (10 commits)
+- **변경 전/후 코드**: 생략 — `git show <SHA>` 로 조회 (per-task commit 보존)
+
+### [2026-05-23 11:50] [검증] (task: Task 11)
+- **id**: CH-20260523-006
+- **이유**: 본 plan 완료 시점 최종 정적/통합 검증.
+- **무엇이**: `bash scripts/verify-plugin.sh` (11 검증 그룹) + `bats tests/` (9 파일 / 40 tests). pre-plugin 브랜치 fallback 확인은 integration AC-6 의 `git show pre-plugin:template/CLAUDE.md` 로 흡수.
+- **결과**: **PASS** — verify-plugin [PASS] 11/11 그룹, bats 40/40 tests.
+- **연관 commit**: N/A (검증만, 코드 변경 X)
+- **연관 항목**: CH-20260523-005 (batch)
+
+### [2026-05-23 11:50] [구현계획서-수정] (task: Task 12)
+- **id**: CH-20260523-007
+- **이유**: HANDOFF.md §13 추가 — 본 작업 완료 인수인계.
+- **무엇이**: `/Users/goldenplanet/jinsup_space/js-ralph/HANDOFF.md` (메인 repo, .gitignore 처리되어 worktree 안 추적 X). §13 신설 — 변경 요약 / 디렉토리 구조 / 신규 하네스 동기화 정책 / commit 흐름 (Task 1~10 SHA) / 최종 검증 결과 / 다음 세션 즉시 할 일 (manual 검증 + marketplace 등록 + main 머지) / 산출물 docs/ 경로.
+- **영향범위**: 없음 (HANDOFF.md 는 git 추적 X, 다음 세션 fresh context 가 참조). plan commit step 5 의 `git add HANDOFF.md` 는 .gitignore 라 자동 skip.
+- **연관 항목**: CH-20260523-005 (batch), CH-20260523-006 (검증)
