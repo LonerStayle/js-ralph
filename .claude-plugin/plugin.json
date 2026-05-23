@@ -1,7 +1,7 @@
 {
   "name": "js-ralph",
-  "version": "1.0.0",
-  "description": "Claude Code 플러그인 — v3-classic ralph 하네스 셋업 + vision-intake 비전 인터뷰 + ralph-loop 자동 시작 게이트.",
+  "version": "1.0.1",
+  "description": "명령 한 번으로 사용자 맞춤 랄프 루프를 만드는 랄프 전용 하네스 플러그인",
   "author": {
     "name": "Jinsup Choi",
     "email": "dlwlstjq410@gmail.com"
