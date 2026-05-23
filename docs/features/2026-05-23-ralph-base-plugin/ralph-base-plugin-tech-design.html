@@ -1,0 +1,1188 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>개발방향: ralph-base-plugin</title>
+<style>
+  /* ─── RESET & BASE ─── */
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  :root {
+    --bg-0: #070809;
+    --bg-1: #0d1117;
+    --bg-2: #111218;
+    --bg-3: #161b22;
+    --bg-card: rgba(22, 27, 34, 0.75);
+    --border: rgba(48, 54, 61, 0.8);
+    --border-light: rgba(48, 54, 61, 0.4);
+    --text-0: #e6edf3;
+    --text-1: #b1bac4;
+    --text-2: #8b949e;
+    --accent-1: #58a6ff;
+    --accent-2: #79c0ff;
+    --accent-grad: linear-gradient(135deg, #58a6ff 0%, #bc8cff 50%, #ff7b72 100%);
+    --accent-grad-h: linear-gradient(135deg, #79c0ff 0%, #d2a8ff 50%, #ff9492 100%);
+    --green: #3fb950;
+    --green-dim: rgba(63,185,80,0.15);
+    --red: #ff7b72;
+    --red-dim: rgba(255,123,114,0.15);
+    --orange: #e3b341;
+    --orange-dim: rgba(227,179,65,0.15);
+    --purple: #bc8cff;
+    --purple-dim: rgba(188,140,255,0.13);
+    --mono: 'JetBrains Mono', 'Fira Code', 'Cascadia Code', 'Consolas', monospace;
+    --sans: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
+    --radius: 10px;
+    --radius-sm: 6px;
+    --shadow-card: 0 4px 24px rgba(0,0,0,0.4), 0 1px 4px rgba(0,0,0,0.3);
+    --shadow-glow-blue: 0 0 24px rgba(88,166,255,0.25);
+    --shadow-glow-green: 0 0 24px rgba(63,185,80,0.25);
+    --shadow-glow-red: 0 0 24px rgba(255,123,114,0.25);
+  }
+
+  html { scroll-behavior: smooth; }
+  body {
+    font-family: var(--sans);
+    background: var(--bg-0);
+    color: var(--text-0);
+    line-height: 1.7;
+    font-size: 15px;
+    min-height: 100vh;
+    background-image:
+      radial-gradient(ellipse 70% 50% at 50% -10%, rgba(88,166,255,0.07) 0%, transparent 70%),
+      radial-gradient(ellipse 50% 30% at 90% 80%, rgba(188,140,255,0.05) 0%, transparent 60%);
+  }
+
+  /* ─── SCROLLBAR ─── */
+  ::-webkit-scrollbar { width: 6px; }
+  ::-webkit-scrollbar-track { background: var(--bg-1); }
+  ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
+  ::-webkit-scrollbar-thumb:hover { background: var(--text-2); }
+
+  /* ─── LAYOUT ─── */
+  .page-wrap {
+    max-width: 1040px;
+    margin: 0 auto;
+    padding: 0 24px 80px;
+  }
+
+  /* ─── HERO ─── */
+  .hero {
+    padding: 64px 0 40px;
+    position: relative;
+  }
+  .hero::after {
+    content: '';
+    display: block;
+    height: 1px;
+    background: linear-gradient(90deg, transparent, var(--border), transparent);
+    margin-top: 40px;
+  }
+  .hero-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    background: rgba(88,166,255,0.1);
+    border: 1px solid rgba(88,166,255,0.3);
+    border-radius: 20px;
+    padding: 4px 14px;
+    font-size: 12px;
+    color: var(--accent-2);
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    font-weight: 600;
+    margin-bottom: 20px;
+  }
+  .hero-badge::before { content: '◈'; font-size: 10px; }
+  .hero h1 {
+    font-size: clamp(28px, 4.5vw, 44px);
+    font-weight: 800;
+    letter-spacing: -0.02em;
+    background: var(--accent-grad);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    line-height: 1.15;
+    margin-bottom: 24px;
+  }
+
+  /* ─── CALLOUT (blockquote) ─── */
+  .callout {
+    background: rgba(88,166,255,0.06);
+    border: 1px solid rgba(88,166,255,0.22);
+    border-left: 3px solid var(--accent-1);
+    border-radius: var(--radius-sm);
+    padding: 16px 20px;
+    margin: 16px 0;
+    font-size: 13.5px;
+    color: var(--text-1);
+  }
+  .callout strong { color: var(--text-0); }
+  .callout p + p { margin-top: 8px; }
+  .callout-label {
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--accent-1);
+    margin-bottom: 6px;
+  }
+
+  /* ─── SECTION ─── */
+  section {
+    margin-top: 56px;
+  }
+  .section-header {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    margin-bottom: 24px;
+    padding-bottom: 14px;
+    border-bottom: 1px solid var(--border-light);
+  }
+  .section-num {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 36px; height: 36px;
+    border-radius: 8px;
+    background: var(--accent-grad);
+    font-weight: 800;
+    font-size: 14px;
+    color: #fff;
+    flex-shrink: 0;
+    box-shadow: 0 2px 10px rgba(88,166,255,0.3);
+  }
+  h2 {
+    font-size: 22px;
+    font-weight: 700;
+    color: var(--text-0);
+    letter-spacing: -0.01em;
+  }
+  h3 {
+    font-size: 16px;
+    font-weight: 700;
+    color: var(--accent-2);
+    margin: 28px 0 14px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+  h3::before {
+    content: '';
+    display: block;
+    width: 4px; height: 18px;
+    background: var(--accent-grad);
+    border-radius: 2px;
+    flex-shrink: 0;
+  }
+  p { margin: 10px 0; color: var(--text-1); }
+  p strong { color: var(--text-0); font-weight: 600; }
+  ul, ol { padding-left: 22px; margin: 8px 0; }
+  li { margin: 4px 0; color: var(--text-1); }
+  li strong { color: var(--text-0); }
+
+  /* ─── ONE-LINE SUMMARY ─── */
+  .one-liner {
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-left: 3px solid var(--green);
+    border-radius: var(--radius);
+    padding: 18px 22px;
+    font-size: 15px;
+    color: var(--text-0);
+    box-shadow: var(--shadow-card);
+    backdrop-filter: blur(8px);
+    line-height: 1.65;
+  }
+  .one-liner code { color: var(--accent-2); }
+
+  /* ─── MERMAID / FLOW DIAGRAM ─── */
+  .flow-wrap {
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 28px 24px;
+    margin: 20px 0;
+    overflow-x: auto;
+    box-shadow: var(--shadow-card);
+    backdrop-filter: blur(8px);
+  }
+  .flow-svg-container {
+    overflow-x: auto;
+    overflow-y: visible;
+  }
+  .flow-svg {
+    min-width: 720px;
+    width: 100%;
+  }
+
+  /* ─── CODE BLOCK ─── */
+  .code-block-wrap {
+    position: relative;
+    margin: 16px 0;
+    border-radius: var(--radius);
+    overflow: hidden;
+    border: 1px solid var(--border);
+    box-shadow: var(--shadow-card);
+  }
+  .code-lang {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    background: var(--bg-3);
+    padding: 8px 14px;
+    font-size: 11.5px;
+    font-family: var(--mono);
+    color: var(--text-2);
+    border-bottom: 1px solid var(--border-light);
+  }
+  .copy-btn {
+    background: rgba(88,166,255,0.12);
+    border: 1px solid rgba(88,166,255,0.25);
+    color: var(--accent-1);
+    font-size: 11px;
+    padding: 3px 10px;
+    border-radius: 4px;
+    cursor: pointer;
+    font-family: var(--sans);
+    transition: background 0.15s, color 0.15s;
+  }
+  .copy-btn:hover { background: rgba(88,166,255,0.22); color: var(--accent-2); }
+  .copy-btn.copied { color: var(--green); border-color: rgba(63,185,80,0.4); }
+  pre {
+    background: #0d1117;
+    padding: 18px 20px;
+    overflow-x: auto;
+    font-family: var(--mono);
+    font-size: 13px;
+    line-height: 1.65;
+    color: var(--text-0);
+    margin: 0;
+  }
+  code { font-family: var(--mono); font-size: 0.9em; color: var(--accent-2); background: rgba(88,166,255,0.08); padding: 1px 5px; border-radius: 3px; }
+  pre code { background: none; padding: 0; color: inherit; font-size: inherit; }
+
+  /* ─── TABLES ─── */
+  .table-wrap {
+    overflow-x: auto;
+    margin: 16px 0;
+    border-radius: var(--radius);
+    border: 1px solid var(--border);
+    box-shadow: var(--shadow-card);
+  }
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 13.5px;
+    min-width: 480px;
+  }
+  thead tr {
+    background: var(--bg-3);
+  }
+  thead th {
+    padding: 11px 16px;
+    text-align: left;
+    font-weight: 700;
+    font-size: 12px;
+    letter-spacing: 0.07em;
+    text-transform: uppercase;
+    color: var(--text-2);
+    border-bottom: 1px solid var(--border);
+    white-space: nowrap;
+  }
+  tbody tr {
+    border-bottom: 1px solid var(--border-light);
+    transition: background 0.12s;
+  }
+  tbody tr:last-child { border-bottom: none; }
+  tbody tr:nth-child(odd) { background: rgba(22,27,34,0.6); }
+  tbody tr:nth-child(even) { background: rgba(13,17,23,0.5); }
+  tbody tr:hover { background: rgba(88,166,255,0.06); }
+  td {
+    padding: 10px 16px;
+    color: var(--text-1);
+    vertical-align: top;
+  }
+  td strong { color: var(--text-0); }
+  td code { font-size: 12px; }
+
+  /* ─── DECISION CARDS (D-N) ─── */
+  .decision-section { margin-top: 36px; }
+  .decision-id {
+    display: inline-block;
+    font-family: var(--mono);
+    font-size: 12px;
+    font-weight: 700;
+    background: rgba(188,140,255,0.15);
+    border: 1px solid rgba(188,140,255,0.3);
+    color: var(--purple);
+    padding: 3px 10px;
+    border-radius: 20px;
+    margin-bottom: 8px;
+    letter-spacing: 0.05em;
+  }
+  .decision-title {
+    font-size: 16px;
+    font-weight: 700;
+    color: var(--text-0);
+    margin-bottom: 10px;
+  }
+  .decision-body-text {
+    font-size: 13.5px;
+    color: var(--text-1);
+    margin-bottom: 14px;
+  }
+  .decision-options {
+    display: grid;
+    gap: 12px;
+    margin-bottom: 14px;
+  }
+  .decision-options.cols-2 { grid-template-columns: 1fr 1fr; }
+  .decision-options.cols-3 { grid-template-columns: repeat(3, 1fr); }
+  @media (max-width: 720px) {
+    .decision-options.cols-2,
+    .decision-options.cols-3 { grid-template-columns: 1fr; }
+  }
+  .opt-card {
+    background: var(--bg-3);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 16px 18px;
+    position: relative;
+    transition: box-shadow 0.18s, border-color 0.18s;
+  }
+  .opt-card:hover { box-shadow: 0 4px 20px rgba(0,0,0,0.35); }
+  .opt-card.adopted {
+    background: rgba(63,185,80,0.06);
+    border-color: rgba(63,185,80,0.45);
+    box-shadow: 0 0 22px rgba(63,185,80,0.15);
+  }
+  .opt-card.adopted::before {
+    content: '✓ 채택';
+    position: absolute;
+    top: 10px; right: 12px;
+    font-size: 10.5px;
+    font-weight: 700;
+    color: var(--green);
+    background: rgba(63,185,80,0.15);
+    border: 1px solid rgba(63,185,80,0.35);
+    padding: 2px 8px;
+    border-radius: 12px;
+    letter-spacing: 0.04em;
+  }
+  .opt-card.rejected {
+    opacity: 0.55;
+  }
+  .opt-card.rejected::before {
+    content: '✗ 거부';
+    position: absolute;
+    top: 10px; right: 12px;
+    font-size: 10.5px;
+    font-weight: 700;
+    color: var(--red);
+    background: rgba(255,123,114,0.1);
+    border: 1px solid rgba(255,123,114,0.25);
+    padding: 2px 8px;
+    border-radius: 12px;
+    letter-spacing: 0.04em;
+  }
+  .opt-label {
+    font-weight: 800;
+    font-size: 13px;
+    color: var(--text-0);
+    margin-bottom: 6px;
+    font-family: var(--mono);
+  }
+  .opt-desc { font-size: 13px; color: var(--text-1); margin-bottom: 6px; line-height: 1.5; }
+  .opt-pros { font-size: 12.5px; color: var(--green); margin: 4px 0; }
+  .opt-pros::before { content: '+ '; font-weight: 700; }
+  .opt-cons { font-size: 12.5px; color: #e3b341; margin: 4px 0; }
+  .opt-cons::before { content: '− '; font-weight: 700; }
+  .decision-verdict {
+    background: rgba(63,185,80,0.08);
+    border: 1px solid rgba(63,185,80,0.25);
+    border-left: 3px solid var(--green);
+    border-radius: var(--radius-sm);
+    padding: 12px 16px;
+    font-size: 13.5px;
+    color: var(--text-0);
+    margin-top: 4px;
+  }
+  .decision-verdict strong { color: var(--green); }
+
+  /* ─── RISK CARDS (R-N) ─── */
+  .risk-grid {
+    display: grid;
+    gap: 14px;
+    grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+    margin-top: 16px;
+  }
+  .risk-card {
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 18px 20px;
+    backdrop-filter: blur(8px);
+    transition: transform 0.15s, box-shadow 0.18s;
+    position: relative;
+    overflow: hidden;
+  }
+  .risk-card::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    height: 3px;
+  }
+  .risk-card.breaking::before { background: linear-gradient(90deg, var(--red), #ff5050); }
+  .risk-card.side-effect::before { background: linear-gradient(90deg, var(--orange), #f0c04a); }
+  .risk-card:hover { transform: translateY(-2px); box-shadow: 0 8px 32px rgba(0,0,0,0.4); }
+  .risk-card.breaking { border-color: rgba(255,123,114,0.35); box-shadow: 0 2px 16px rgba(255,123,114,0.1); }
+  .risk-card.side-effect { border-color: rgba(227,179,65,0.35); box-shadow: 0 2px 16px rgba(227,179,65,0.08); }
+  .risk-header {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 10px;
+  }
+  .risk-id {
+    font-family: var(--mono);
+    font-size: 12px;
+    font-weight: 700;
+    padding: 3px 9px;
+    border-radius: 12px;
+    letter-spacing: 0.04em;
+    flex-shrink: 0;
+  }
+  .risk-card.breaking .risk-id { background: var(--red-dim); color: var(--red); border: 1px solid rgba(255,123,114,0.3); }
+  .risk-card.side-effect .risk-id { background: var(--orange-dim); color: var(--orange); border: 1px solid rgba(227,179,65,0.3); }
+  .risk-category {
+    font-size: 10.5px;
+    font-weight: 700;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    padding: 2px 8px;
+    border-radius: 10px;
+  }
+  .risk-card.breaking .risk-category { color: var(--red); background: var(--red-dim); }
+  .risk-card.side-effect .risk-category { color: var(--orange); background: var(--orange-dim); }
+  .risk-title { font-size: 14px; font-weight: 700; color: var(--text-0); margin-bottom: 8px; line-height: 1.45; }
+  .risk-mitigation { font-size: 12.5px; color: var(--text-2); line-height: 1.55; }
+  .risk-mitigation strong { color: var(--text-1); }
+  .risk-note {
+    margin-top: 16px;
+    padding: 12px 16px;
+    background: rgba(13,17,23,0.7);
+    border: 1px solid var(--border-light);
+    border-radius: var(--radius-sm);
+    font-size: 13px;
+    color: var(--text-2);
+  }
+
+  /* ─── SINGLE-SOURCE CALLOUT ─── */
+  .source-truth {
+    background: rgba(188,140,255,0.07);
+    border: 1px solid rgba(188,140,255,0.25);
+    border-left: 3px solid var(--purple);
+    border-radius: var(--radius-sm);
+    padding: 14px 18px;
+    font-size: 13.5px;
+    color: var(--text-1);
+    margin-top: 12px;
+  }
+  .source-truth strong { color: var(--text-0); }
+
+  /* ─── AC / TEST ITEMS ─── */
+  .ac-list {
+    list-style: none;
+    padding: 0;
+    display: grid;
+    gap: 8px;
+    margin: 10px 0;
+  }
+  .ac-list li {
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    padding: 10px 14px;
+    font-size: 13.5px;
+    color: var(--text-1);
+    display: flex;
+    gap: 10px;
+    align-items: flex-start;
+    backdrop-filter: blur(6px);
+  }
+  .ac-id {
+    font-family: var(--mono);
+    font-size: 11px;
+    font-weight: 700;
+    color: var(--accent-1);
+    background: rgba(88,166,255,0.1);
+    border: 1px solid rgba(88,166,255,0.25);
+    padding: 2px 7px;
+    border-radius: 8px;
+    flex-shrink: 0;
+    margin-top: 1px;
+  }
+  .ac-manual {
+    font-size: 11px;
+    color: var(--orange);
+    background: var(--orange-dim);
+    border: 1px solid rgba(227,179,65,0.25);
+    padding: 1px 6px;
+    border-radius: 6px;
+    flex-shrink: 0;
+    margin-top: 3px;
+  }
+
+  /* ─── VERIFY CHECKLIST ─── */
+  .verify-list {
+    list-style: none;
+    padding: 0;
+    counter-reset: verify-cnt;
+    display: grid;
+    gap: 8px;
+    margin: 10px 0;
+  }
+  .verify-list li {
+    counter-increment: verify-cnt;
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    padding: 10px 14px 10px 46px;
+    font-size: 13.5px;
+    color: var(--text-1);
+    position: relative;
+    backdrop-filter: blur(6px);
+  }
+  .verify-list li::before {
+    content: counter(verify-cnt);
+    position: absolute;
+    left: 12px; top: 50%;
+    transform: translateY(-50%);
+    width: 22px; height: 22px;
+    background: var(--accent-grad);
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 11px;
+    font-weight: 800;
+    color: #fff;
+    line-height: 22px;
+    text-align: center;
+  }
+
+  /* ─── N/A SECTIONS ─── */
+  .na-block {
+    background: var(--bg-card);
+    border: 1px solid var(--border-light);
+    border-radius: var(--radius);
+    padding: 20px 24px;
+    color: var(--text-2);
+    font-size: 14px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-top: 12px;
+  }
+  .na-block::before {
+    content: 'N/A';
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 40px; height: 40px;
+    border-radius: 8px;
+    background: rgba(139,148,158,0.12);
+    border: 1px solid var(--border);
+    font-family: var(--mono);
+    font-size: 12px;
+    font-weight: 700;
+    color: var(--text-2);
+    flex-shrink: 0;
+  }
+
+  /* ─── FOOTER ─── */
+  .changelog-footer {
+    margin-top: 60px;
+    padding-top: 20px;
+    border-top: 1px solid var(--border-light);
+    color: var(--text-2);
+    font-size: 13px;
+  }
+
+  /* ─── HORIZONTAL RULE ─── */
+  .divider {
+    height: 1px;
+    background: linear-gradient(90deg, transparent, var(--border), transparent);
+    margin: 48px 0;
+    border: none;
+  }
+
+  /* ─── ANCHOR HIGHLIGHT ─── */
+  :target { scroll-margin-top: 20px; }
+  :target .section-header { animation: targetGlow 1.2s ease-out; }
+  @keyframes targetGlow {
+    0% { background: rgba(88,166,255,0.12); border-radius: 8px; }
+    100% { background: transparent; }
+  }
+
+  /* ─── SMOOTH LINK ─── */
+  a { color: var(--accent-1); text-decoration: none; }
+  a:hover { color: var(--accent-2); text-decoration: underline; }
+</style>
+</head>
+<body>
+<div class="page-wrap">
+
+  <!-- ══════════ HERO ══════════ -->
+  <div class="hero">
+    <div class="hero-badge">Technical Design · ralph-base-plugin</div>
+    <h1>개발방향: ralph-base-plugin</h1>
+
+    <div class="callout">
+      <div class="callout-label">For agentic workers</div>
+      <p>This document is the technical spec (architecture, components, data, interfaces, decisions, risks, test strategy). It is anchored to <code>ralph-base-plugin-requirements.md</code> (the PRD) and consumed by <code>ralph-base-plugin-implementation-plan.md</code> (step-by-step plan). NEXT STEP: invoke <code>writing-plans</code> skill (or run <code>/write-plan</code>) to produce the implementation plan from this design. Do NOT include step-by-step implementation tasks here — those belong in the plan.</p>
+      <p><strong>상위 PRD</strong>: <code>ralph-base-plugin-requirements.md</code> (CH-20260523-001)</p>
+      <p><strong>활성 토픽</strong>: §1 아키텍처, §2 영향 컴포넌트, §5 결정+대안, §6 위험, §7 테스트 전략<br/>
+      <strong>비활성 토픽</strong>: §3 데이터 모델 (DB/스키마 무관), §4 외부 인터페이스 (REST/event 없음) — N/A 한 줄 처리</p>
+    </div>
+  </div>
+
+  <!-- ══════════ §1 ARCHITECTURE ══════════ -->
+  <section id="sec1">
+    <div class="section-header">
+      <div class="section-num">1</div>
+      <h2>아키텍처 개요</h2>
+    </div>
+
+    <h3 id="s1-1">1.1 한 줄 요약</h3>
+    <div class="one-liner">
+      현 <code>js-ralph</code> factory 저장소를 <strong>Claude Code 플러그인 <code>ralph-base</code></strong> 로 재구성. 플러그인 안에 (a) <code>/setup-ralph</code> 슬래시 명령 (b) bash 세팅 스크립트 (c) 5파일 + 부속 파일이 들어있는 <code>assets/template/</code> (d) 동봉 <code>vision-intake</code> skill 을 모두 포함. 사용자는 <code>/plugin install</code> 한 번 + 빈 디렉토리에서 <code>/setup-ralph</code> 한 번이면 v3-classic 하네스 완성.
+    </div>
+
+    <h3 id="s1-2">1.2 ASCII 흐름</h3>
+    <div class="flow-wrap">
+      <!-- Inline SVG flow diagram (converts the ASCII flow to visual) -->
+      <div class="flow-svg-container">
+        <svg class="flow-svg" viewBox="0 0 900 580" xmlns="http://www.w3.org/2000/svg" font-family="-apple-system,BlinkMacSystemFont,'Segoe UI',system-ui,sans-serif">
+          <defs>
+            <marker id="arr" markerWidth="7" markerHeight="7" refX="6" refY="3.5" orient="auto">
+              <polygon points="0 0, 7 3.5, 0 7" fill="#58a6ff"/>
+            </marker>
+            <marker id="arr-gray" markerWidth="7" markerHeight="7" refX="6" refY="3.5" orient="auto">
+              <polygon points="0 0, 7 3.5, 0 7" fill="#8b949e"/>
+            </marker>
+            <linearGradient id="hdr-grad" x1="0" y1="0" x2="1" y2="0">
+              <stop offset="0%" stop-color="#58a6ff" stop-opacity="0.18"/>
+              <stop offset="100%" stop-color="#bc8cff" stop-opacity="0.1"/>
+            </linearGradient>
+          </defs>
+
+          <!-- Column headers -->
+          <rect x="0" y="0" width="900" height="40" fill="url(#hdr-grad)" rx="8"/>
+          <text x="100" y="25" fill="#b1bac4" font-size="12" font-weight="700" text-anchor="middle" letter-spacing="1">[사용자]</text>
+          <text x="450" y="25" fill="#b1bac4" font-size="12" font-weight="700" text-anchor="middle" letter-spacing="1">[Claude Code]</text>
+          <text x="780" y="25" fill="#b1bac4" font-size="12" font-weight="700" text-anchor="middle" letter-spacing="1">[현재 디렉토리]</text>
+
+          <!-- Step 1: /plugin install -->
+          <rect x="10" y="55" width="190" height="44" rx="8" fill="rgba(88,166,255,0.1)" stroke="#58a6ff" stroke-width="1.2"/>
+          <text x="105" y="72" fill="#79c0ff" font-size="12" font-weight="700" text-anchor="middle" font-family="'JetBrains Mono',monospace">/plugin install ralph-base</text>
+          <text x="105" y="88" fill="#8b949e" font-size="10.5" text-anchor="middle">슬래시 명령 입력</text>
+
+          <line x1="200" y1="77" x2="295" y2="77" stroke="#58a6ff" stroke-width="1.5" marker-end="url(#arr)"/>
+
+          <rect x="297" y="55" width="305" height="58" rx="8" fill="rgba(22,27,34,0.8)" stroke="#30363d" stroke-width="1"/>
+          <text x="449" y="72" fill="#e6edf3" font-size="12" font-weight="600" text-anchor="middle">플러그인 cache 에 다운로드</text>
+          <text x="449" y="89" fill="#8b949e" font-size="10.5" text-anchor="middle">~/.claude/plugins/cache/.../ralph-base/&lt;ver&gt;/</text>
+          <text x="449" y="104" fill="#8b949e" font-size="10.5" text-anchor="middle">skills/vision-intake 자동 로드</text>
+
+          <!-- Step 2: cd + claude -->
+          <rect x="10" y="140" width="190" height="44" rx="8" fill="rgba(63,185,80,0.08)" stroke="rgba(63,185,80,0.4)" stroke-width="1.2"/>
+          <text x="105" y="157" fill="#3fb950" font-size="11.5" font-weight="700" text-anchor="middle" font-family="'JetBrains Mono',monospace">cd ~/my-project</text>
+          <text x="105" y="173" fill="#8b949e" font-size="10.5" text-anchor="middle">(빈 디렉토리) → claude</text>
+
+          <!-- Step 3: /setup-ralph -->
+          <rect x="10" y="210" width="190" height="44" rx="8" fill="rgba(88,166,255,0.1)" stroke="#58a6ff" stroke-width="1.5"/>
+          <text x="105" y="232" fill="#79c0ff" font-size="12" font-weight="700" text-anchor="middle" font-family="'JetBrains Mono',monospace">/setup-ralph</text>
+          <text x="105" y="247" fill="#8b949e" font-size="10.5" text-anchor="middle">슬래시 명령</text>
+
+          <line x1="200" y1="232" x2="295" y2="232" stroke="#58a6ff" stroke-width="1.5" marker-end="url(#arr)"/>
+
+          <!-- setup-ralph.md execution box -->
+          <rect x="297" y="195" width="305" height="80" rx="8" fill="rgba(22,27,34,0.85)" stroke="#30363d" stroke-width="1"/>
+          <text x="449" y="214" fill="#e6edf3" font-size="12" font-weight="600" text-anchor="middle">commands/setup-ralph.md 본문 실행</text>
+          <text x="310" y="231" fill="#8b949e" font-size="10.5">└─► bash scripts/setup-ralph.sh</text>
+          <text x="326" y="247" fill="#8b949e" font-size="10.5">인자 파싱 / 충돌 검사</text>
+          <text x="326" y="263" fill="#8b949e" font-size="10.5">cp + sed + git init → stdout</text>
+
+          <!-- cp to directory -->
+          <line x1="602" y1="232" x2="700" y2="232" stroke="#8b949e" stroke-width="1.2" marker-end="url(#arr-gray)"/>
+          <rect x="702" y="208" width="188" height="48" rx="8" fill="rgba(63,185,80,0.07)" stroke="rgba(63,185,80,0.3)" stroke-width="1"/>
+          <text x="796" y="228" fill="#3fb950" font-size="11" font-weight="600" text-anchor="middle">assets/template/ → 현재 디렉토리</text>
+          <text x="796" y="244" fill="#8b949e" font-size="10" text-anchor="middle">sed {{PROJECT_NAME}} 치환</text>
+
+          <!-- vision-intake invoke -->
+          <line x1="449" y1="275" x2="449" y2="305" stroke="#58a6ff" stroke-width="1.5" marker-end="url(#arr)"/>
+          <rect x="297" y="307" width="305" height="38" rx="8" fill="rgba(188,140,255,0.1)" stroke="rgba(188,140,255,0.4)" stroke-width="1.2"/>
+          <text x="449" y="330" fill="#d2a8ff" font-size="12" font-weight="600" text-anchor="middle">Claude → vision-intake skill invoke</text>
+
+          <!-- Step 4: vision-intake 8Q -->
+          <rect x="10" y="378" width="190" height="54" rx="8" fill="rgba(188,140,255,0.08)" stroke="rgba(188,140,255,0.35)" stroke-width="1.2"/>
+          <text x="105" y="397" fill="#d2a8ff" font-size="12" font-weight="700" text-anchor="middle">vision-intake</text>
+          <text x="105" y="412" fill="#8b949e" font-size="10.5" text-anchor="middle">(8 질문)</text>
+          <text x="105" y="426" fill="#8b949e" font-size="10.5" text-anchor="middle">사용자 답변</text>
+
+          <line x1="200" y1="405" x2="295" y2="405" stroke="#bc8cff" stroke-width="1.5" marker-end="url(#arr)"/>
+
+          <rect x="297" y="390" width="305" height="38" rx="8" fill="rgba(22,27,34,0.8)" stroke="#30363d" stroke-width="1"/>
+          <text x="449" y="413" fill="#e6edf3" font-size="11.5" text-anchor="middle">Edit CLAUDE.md (비전 8 자리)</text>
+
+          <!-- Step 5: 확정 -->
+          <rect x="10" y="465" width="190" height="38" rx="8" fill="rgba(227,179,65,0.1)" stroke="rgba(227,179,65,0.35)" stroke-width="1.2"/>
+          <text x="105" y="488" fill="#e3b341" font-size="12" font-weight="700" text-anchor="middle">"확정" 발화</text>
+
+          <line x1="200" y1="484" x2="295" y2="484" stroke="#e3b341" stroke-width="1.5" marker-end="url(#arr)"/>
+
+          <rect x="297" y="465" width="305" height="80" rx="8" fill="rgba(22,27,34,0.85)" stroke="#30363d" stroke-width="1"/>
+          <text x="449" y="483" fill="#e6edf3" font-size="11.5" text-anchor="middle">Edit CLAUDE.md (onboarded:true + ISO)</text>
+          <text x="449" y="499" fill="#8b949e" font-size="10.5" text-anchor="middle">AskUserQuestion("ralph-loop 자동 시작?", yes/no)</text>
+          <text x="316" y="516" fill="#3fb950" font-size="10.5">yes → setup-ralph-loop.sh 호출</text>
+          <text x="316" y="531" fill="#8b949e" font-size="10.5">no  → 수동 명령 안내문 출력</text>
+        </svg>
+      </div>
+    </div>
+
+    <h3 id="s1-3">1.3 단일 출처 (FR-6 정합)</h3>
+    <div class="source-truth">
+      옛 <code>template/</code> (factory) + <code>scripts/new-harness.sh</code> 는 main 에서 제거. 옛 모델은 <code>pre-plugin</code> 브랜치 (<code>b8fb626</code>) 에 통째 보존. <strong>진실의 단일 출처 = 플러그인 안 <code>assets/template/</code></strong> 하나로 단일화.
+    </div>
+  </section>
+
+  <hr class="divider"/>
+
+  <!-- ══════════ §2 COMPONENTS ══════════ -->
+  <section id="sec2">
+    <div class="section-header">
+      <div class="section-num">2</div>
+      <h2>영향 받는 컴포넌트/파일</h2>
+    </div>
+
+    <h3 id="s2-1">2.1 신규 (factory 안 플러그인 구조)</h3>
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>경로</th><th>역할</th></tr></thead>
+        <tbody>
+          <tr><td><code>.claude-plugin/plugin.json</code></td><td>manifest (name=<code>ralph-base</code>, version, description, author)</td></tr>
+          <tr><td><code>commands/setup-ralph.md</code></td><td>슬래시 명령 entry point (frontmatter + bash exec block + post-instruction)</td></tr>
+          <tr><td><code>scripts/setup-ralph.sh</code></td><td>실제 5파일 박는 bash (인자 파싱 / 충돌 / cp / sed / git init)</td></tr>
+          <tr><td><code>scripts/verify-plugin.sh</code></td><td>플러그인 무결성 정적 검증 (assets/template 5파일 존재 / skill frontmatter / manifest schema)</td></tr>
+          <tr><td><code>assets/template/CLAUDE.md</code></td><td>동봉 5파일 + 부속 (현 <code>template/</code> 5파일 그대로 이전)</td></tr>
+          <tr><td><code>assets/template/PROMPT.md</code></td><td>〃</td></tr>
+          <tr><td><code>assets/template/AGENTS.md</code></td><td>〃</td></tr>
+          <tr><td><code>assets/template/IMPLEMENTATION_PLAN.md</code></td><td>〃</td></tr>
+          <tr><td><code>assets/template/README.md</code></td><td>〃</td></tr>
+          <tr><td><code>assets/template/.claude/settings.json</code></td><td>〃</td></tr>
+          <tr><td><code>assets/template/.gitignore</code></td><td>〃</td></tr>
+          <tr><td><code>assets/template/VERSION</code></td><td>〃 (현 <code>3</code> 그대로)</td></tr>
+          <tr><td><code>assets/template/specs/.gitkeep</code></td><td>〃</td></tr>
+          <tr><td><code>skills/vision-intake/SKILL.md</code></td><td>동봉 skill — 현 <code>template/.claude/skills/vision-intake/SKILL.md</code> 본문 + FR-7 (자동 시작 게이트) 5단계에 추가</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <h3 id="s2-2">2.2 제거 (factory 정리, FR-6)</h3>
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>경로</th><th>처리</th></tr></thead>
+        <tbody>
+          <tr><td><code>template/</code> 폴더 전체</td><td>제거 (옛 모델은 <code>pre-plugin</code> 브랜치 보존)</td></tr>
+          <tr><td><code>scripts/new-harness.sh</code></td><td>제거</td></tr>
+          <tr><td><code>scripts/verify-v3-template.sh</code></td><td>제거 (대체: <code>scripts/verify-plugin.sh</code>)</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <h3 id="s2-3">2.3 갱신 (factory 메타)</h3>
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>경로</th><th>어떻게</th></tr></thead>
+        <tbody>
+          <tr><td><code>CLAUDE.md</code></td><td>"ralph 하네스 공장" → "<strong>ralph-base 플러그인 개발/배포 저장소</strong>" 로 본문 갱신. 5파일 디자인 / 4 원칙 섹션 그대로 유지 (개발자에게 여전히 유용). 디렉토리 구조 표 갱신</td></tr>
+          <tr><td><code>README.md</code></td><td>빠른 시작 = <code>/plugin install ralph-base</code> + <code>/setup-ralph</code>. 옛 흐름 (factory clone + bash) 은 "옛 모델은 <code>pre-plugin</code> 브랜치 참조" 한 줄로</td></tr>
+          <tr><td><code>docs/</code></td><td>보존 (history)</td></tr>
+          <tr><td><code>HANDOFF.md</code></td><td>본 작업 완료 시 §13 추가 (별도 작업)</td></tr>
+          <tr><td><code>.gitignore</code></td><td>변경 없음</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <hr class="divider"/>
+
+  <!-- ══════════ §3 DATA MODEL ══════════ -->
+  <section id="sec3">
+    <div class="section-header">
+      <div class="section-num">3</div>
+      <h2>데이터 모델/스키마 변경</h2>
+    </div>
+    <div class="na-block">
+      본 피처는 DB / 스키마 / 영구 저장소 무관. 파일 시스템 단순 cp + sed + git 만 다룸.
+    </div>
+  </section>
+
+  <hr class="divider"/>
+
+  <!-- ══════════ §4 EXTERNAL INTERFACES ══════════ -->
+  <section id="sec4">
+    <div class="section-header">
+      <div class="section-num">4</div>
+      <h2>외부 인터페이스</h2>
+    </div>
+    <div class="na-block">
+      REST / GraphQL / webhook / 이벤트 노출 없음. Claude Code 슬래시 인터페이스 (<code>/setup-ralph</code>) + Bash 도구만 사용. 외부 시스템 호출 없음 (ralph-loop 플러그인의 <code>setup-ralph-loop.sh</code> 호출은 같은 머신 내 다른 플러그인 bash 호출이라 외부 IF 아님).
+    </div>
+  </section>
+
+  <hr class="divider"/>
+
+  <!-- ══════════ §5 DECISIONS ══════════ -->
+  <section id="sec5">
+    <div class="section-header">
+      <div class="section-num">5</div>
+      <h2>핵심 결정 + 대안 비교</h2>
+    </div>
+
+    <!-- D-1 -->
+    <div class="decision-section" id="D-1">
+      <div class="decision-id">D-1</div>
+      <div class="decision-title">vision-intake skill 의 배포 위치</div>
+      <div class="decision-options cols-2">
+        <div class="opt-card adopted">
+          <div class="opt-label">A</div>
+          <div class="opt-desc">플러그인 root 의 <code>skills/vision-intake/SKILL.md</code> 동봉. 하네스 디렉토리에는 복사 X</div>
+          <div class="opt-pros">플러그인이 단일 출처. ralph-base 업데이트 시 skill 도 자동 갱신</div>
+          <div class="opt-cons">하네스 단독 (플러그인 미설치 환경) 으로는 vision-intake 동작 X — 본 PRD 의 신규 하네스는 항상 ralph-base 가 깔린 환경에서만 시작하므로 무관</div>
+        </div>
+        <div class="opt-card rejected">
+          <div class="opt-label">B</div>
+          <div class="opt-desc"><code>assets/template/.claude/skills/vision-intake/SKILL.md</code> 로 두고 cp 시 함께 복사 (현 factory 모델)</div>
+          <div class="opt-pros">하네스 독립적</div>
+          <div class="opt-cons">skill 두 출처 (플러그인 + 하네스). 갱신 drift 발생</div>
+        </div>
+      </div>
+      <div class="decision-verdict">→ <strong>A</strong>. 플러그인이 master 라는 본 PRD 의 핵심 원칙과 정합.</div>
+    </div>
+
+    <!-- D-2 -->
+    <div class="decision-section" id="D-2">
+      <div class="decision-id">D-2</div>
+      <div class="decision-title"><code>/setup-ralph</code> 가 어떻게 vision-intake 를 트리거하나</div>
+      <div class="decision-options cols-2">
+        <div class="opt-card adopted">
+          <div class="opt-label">A</div>
+          <div class="opt-desc"><code>setup-ralph.md</code> body 끝에 명시 instruction: "5파일 박혔습니다. 이제 <code>vision-intake</code> skill 을 invoke 해서 비전 인터뷰를 시작하세요" → Claude 가 같은 turn 에 Skill 도구로 호출</div>
+          <div class="opt-pros">같은 세션에서 즉시 트리거. 사용자가 별도 발화 불필요. 확실성 100%</div>
+          <div class="opt-cons">setup-ralph.md 본문에 instruction 한 줄 추가 필요 (간단)</div>
+        </div>
+        <div class="opt-card rejected">
+          <div class="opt-label">B</div>
+          <div class="opt-desc">CLAUDE.md 의 <code>onboarded: false</code> 를 Claude Code 의 자동 로드 + skill 자동 트리거 메커니즘에 의존</div>
+          <div class="opt-pros">factory 의 기존 모델 그대로</div>
+          <div class="opt-cons">같은 세션에서 CLAUDE.md 자동 재로드 안 됨 → 다음 세션 열어야 트리거. UX 후퇴</div>
+        </div>
+      </div>
+      <div class="decision-verdict">→ <strong>A</strong>. PRD FR-3 의 "별도 발화 없이 인터뷰 시작" 만족.</div>
+    </div>
+
+    <!-- D-3 -->
+    <div class="decision-section" id="D-3">
+      <div class="decision-id">D-3</div>
+      <div class="decision-title"><code>--overlay</code> 모드에서 onboarded:true 가드 우회 옵션</div>
+      <div class="decision-options cols-3">
+        <div class="opt-card adopted">
+          <div class="opt-label">A</div>
+          <div class="opt-desc"><code>--overlay --force</code> 조합만 onboarded:true 우회. <code>--force</code> 없이 onboarded:true 면 abort. <code>--force</code> 시 기존 CLAUDE.md 도 <code>.v2.bak</code> 백업 후 새로 박음</div>
+          <div class="opt-pros">대표님 비전 보호 + 의도적 우회 경로</div>
+          <div class="opt-cons">사용자가 <code>--force</code> 의미 알아야 함 (안내문에 명시)</div>
+        </div>
+        <div class="opt-card rejected">
+          <div class="opt-label">B</div>
+          <div class="opt-desc">onboarded:true 면 무조건 abort, 우회 X (사용자가 별도 폴더에서 다시 시작)</div>
+          <div class="opt-pros">데이터 안전 최대</div>
+          <div class="opt-cons">진짜 마이그 필요 시 (옛 비전 폐기 + 새 비전 시작) 강제로 폴더 옮겨야 함</div>
+        </div>
+        <div class="opt-card rejected">
+          <div class="opt-label">C</div>
+          <div class="opt-desc">무조건 덮어쓰기</div>
+          <div class="opt-pros">단순</div>
+          <div class="opt-cons">비전 손실 위험</div>
+        </div>
+      </div>
+      <div class="decision-verdict">→ <strong>A</strong>. 데이터 보호 + 의도적 우회 경로 둘 다 만족.</div>
+    </div>
+
+    <!-- D-4 -->
+    <div class="decision-section" id="D-4">
+      <div class="decision-id">D-4</div>
+      <div class="decision-title"><code>setup-ralph.sh</code> 의 <code>--overlay</code> 충돌 파일 백업 이름 정책</div>
+      <div class="decision-options cols-3">
+        <div class="opt-card adopted">
+          <div class="opt-label">A</div>
+          <div class="opt-desc"><code>&lt;filename&gt;.v2.bak</code> 접미사. 이미 <code>.v2.bak</code> 가 있으면 → <code>&lt;filename&gt;.bak.&lt;ISO-timestamp&gt;</code> 로 두 번째 백업 (덮어쓰기 X)</div>
+        </div>
+        <div class="opt-card rejected">
+          <div class="opt-label">B</div>
+          <div class="opt-desc">매번 timestamp 접미사 (<code>&lt;filename&gt;.bak.&lt;ISO&gt;</code>) — 항상 unique, 단 파일 누적 증가</div>
+        </div>
+        <div class="opt-card rejected">
+          <div class="opt-label">C</div>
+          <div class="opt-desc">매번 <code>.v2.bak</code> 덮어쓰기 — 백업 의미 상실</div>
+        </div>
+      </div>
+      <div class="decision-verdict">→ <strong>A</strong>. PlanB 마이그 케이스 (<code>.v2.bak</code> 이미 있음) 와 정합 + 백업 손실 0.</div>
+    </div>
+
+    <!-- D-5 -->
+    <div class="decision-section" id="D-5">
+      <div class="decision-id">D-5</div>
+      <div class="decision-title">FR-7 의 max-iterations 자동 추출 로직</div>
+      <p class="decision-body-text">CLAUDE.md §7 "규모·일정·비용 cap" 자유 텍스트에서 숫자 추출.</p>
+      <div class="decision-options cols-3">
+        <div class="opt-card adopted">
+          <div class="opt-label">A</div>
+          <div class="opt-desc">bash 의 <code>grep -oE '[0-9]+'</code> 으로 §7 본문 첫 정수 추출. 0 또는 100 미만 / 500 초과면 default 150 으로 fallback. 추출 실패 시 default 150</div>
+        </div>
+        <div class="opt-card rejected">
+          <div class="opt-label">B</div>
+          <div class="opt-desc">Python helper 로 정교한 NLP — 과잉</div>
+        </div>
+        <div class="opt-card rejected">
+          <div class="opt-label">C</div>
+          <div class="opt-desc">자동 추출 안 함, 항상 150 — 사용자 비전 §7 무시</div>
+        </div>
+      </div>
+      <div class="decision-verdict">→ <strong>A</strong>. 단순 + 합리적 fallback + 100~500 범위 가드.</div>
+    </div>
+
+    <!-- D-6 -->
+    <div class="decision-section" id="D-6">
+      <div class="decision-id">D-6</div>
+      <div class="decision-title"><code>setup-ralph.sh</code> 가 호출하는 <code>setup-ralph-loop.sh</code> 의 path 해석</div>
+      <p class="decision-body-text">vision-intake skill 본문 (자동 시작 게이트) 에서 ralph-loop 플러그인의 setup script 를 Bash 도구로 호출.</p>
+      <div class="decision-options cols-3">
+        <div class="opt-card adopted">
+          <div class="opt-label">A</div>
+          <div class="opt-desc"><code>~/.claude/plugins/cache/claude-plugins-official/ralph-loop/*/scripts/setup-ralph-loop.sh</code> (glob, 현 <code>template/.claude/settings.json</code> 의 allow-list 와 동일 패턴). 단 호출 전 <code>ls</code> 로 path 존재 확인 → 없으면 게이트 띄우기 전에 사용자에게 "ralph-loop 플러그인 미설치, 먼저 <code>/plugin install ralph-loop</code>" 안내</div>
+        </div>
+        <div class="opt-card rejected">
+          <div class="opt-label">B</div>
+          <div class="opt-desc"><code>${CLAUDE_PLUGIN_ROOT}</code> 의 상대경로 — ralph-base 플러그인 root 이라 ralph-loop 와 다른 경로. 사용 X</div>
+        </div>
+        <div class="opt-card rejected">
+          <div class="opt-label">C</div>
+          <div class="opt-desc">환경변수로 path override — 과잉 + 사용자 부담</div>
+        </div>
+      </div>
+      <div class="decision-verdict">→ <strong>A</strong>. 단 사전 체크 + 안내로 robustness 보장.</div>
+    </div>
+
+    <!-- D-7 -->
+    <div class="decision-section" id="D-7">
+      <div class="decision-id">D-7</div>
+      <div class="decision-title"><code>assets/template/.claude/settings.json</code> 의 allow-list 갱신</div>
+      <p class="decision-body-text">현 <code>template/.claude/settings.json</code> 의 마지막 항목:</p>
+      <div class="code-block-wrap">
+        <div class="code-lang">
+          <span>json</span>
+          <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+        </div>
+        <pre><code>"Bash(bash ~/.claude/plugins/cache/claude-plugins-official/ralph-loop/*/scripts/setup-ralph-loop.sh:*)"</code></pre>
+      </div>
+      <p class="decision-body-text">→ <strong>이건 ralph-loop 직접 호출용</strong> 이라 본 PRD 의 FR-7 (vision-intake 가 같은 path 호출) 와 자동 정합. 변경 없음.</p>
+      <p class="decision-body-text">추가 검토: ralph-base 플러그인의 <code>/setup-ralph</code> 가 한 번 실행되면 <code>${CLAUDE_PLUGIN_ROOT}/scripts/setup-ralph.sh</code> 가 호출됨. 이건 <code>allowed-tools</code> 에 박혀 있어서 별도 settings.json 갱신 불필요.</p>
+    </div>
+  </section>
+
+  <hr class="divider"/>
+
+  <!-- ══════════ §6 RISKS ══════════ -->
+  <section id="sec6">
+    <div class="section-header">
+      <div class="section-num">6</div>
+      <h2>위험 / 사이드이펙트 (preliminary)</h2>
+    </div>
+
+    <div class="risk-grid">
+      <div class="risk-card breaking" id="R-1">
+        <div class="risk-header">
+          <span class="risk-id">R-1</span>
+          <span class="risk-category">breaking</span>
+        </div>
+        <div class="risk-title"><code>--overlay</code> 가 사용자 데이터 (코드/문서/비전) 를 덮어쓸 위험</div>
+        <div class="risk-mitigation"><strong>완화:</strong> <code>.v2.bak</code> 자동 백업 (<a href="#D-4">D-4</a>) + onboarded:true abort (<a href="#D-3">D-3</a>) + <code>--force</code> 명시 우회 경로</div>
+      </div>
+
+      <div class="risk-card side-effect" id="R-2">
+        <div class="risk-header">
+          <span class="risk-id">R-2</span>
+          <span class="risk-category">side-effect</span>
+        </div>
+        <div class="risk-title"><code>{{PROJECT_NAME}}</code> 치환 시 디렉토리 이름의 특수문자 (공백 / 한글 / <code>&amp;</code> <code>/</code> 등) 가 sed 식 깨뜨림</div>
+        <div class="risk-mitigation"><strong>완화:</strong> bash 의 <code>basename "$PWD"</code> + sed 의 <code>s</code> 명령에서 구분자를 <code>|</code> 로 사용 (slash 충돌 회피) + 값을 <code>printf %q</code> 로 escape</div>
+      </div>
+
+      <div class="risk-card side-effect" id="R-3">
+        <div class="risk-header">
+          <span class="risk-id">R-3</span>
+          <span class="risk-category">side-effect</span>
+        </div>
+        <div class="risk-title">FR-7 의 ralph-loop 자동 시작이 ralph-loop 플러그인 미설치 시 bash fail</div>
+        <div class="risk-mitigation"><strong>완화:</strong> <a href="#D-6">D-6</a> 의 사전 path 체크 + 안내문. 게이트 자체를 건너뛰고 미설치 안내</div>
+      </div>
+
+      <div class="risk-card breaking" id="R-4">
+        <div class="risk-header">
+          <span class="risk-id">R-4</span>
+          <span class="risk-category">breaking</span>
+        </div>
+        <div class="risk-title">FR-7 자동 시작이 자연어 인자 누설로 shell glob fail (직전 세션 사고 재발)</div>
+        <div class="risk-mitigation"><strong>완화:</strong> vision-intake skill 본문에 <strong>고정 명령 문자열 박음</strong> (변수 치환 X, prompt = <code>"Read PROMPT.md and follow it."</code> 그대로) + max-iterations 만 숫자 치환</div>
+      </div>
+
+      <div class="risk-card breaking" id="R-5">
+        <div class="risk-header">
+          <span class="risk-id">R-5</span>
+          <span class="risk-category">breaking</span>
+        </div>
+        <div class="risk-title"><code>git init -b main</code> 이 <code>clean + .git 없음</code> 조건 외에서 잘못 실행 → 기존 git history 파괴</div>
+        <div class="risk-mitigation"><strong>완화:</strong> bash 의 조건 분기 강화 — <code>clean</code> 인자 + <code>! -d .git</code> 둘 다 만족할 때만 실행. overlay 모드에서는 <code>git init</code> 절대 호출 X</div>
+      </div>
+
+      <div class="risk-card side-effect" id="R-6">
+        <div class="risk-header">
+          <span class="risk-id">R-6</span>
+          <span class="risk-category">side-effect</span>
+        </div>
+        <div class="risk-title">플러그인 캐시 위치가 OS / Claude Code 버전 따라 달라질 위험</div>
+        <div class="risk-mitigation"><strong>완화:</strong> <code>${CLAUDE_PLUGIN_ROOT}</code> 환경변수 사용 (Claude Code 표준 변수, OS 무관). path hardcode 금지</div>
+      </div>
+
+      <div class="risk-card side-effect" id="R-7">
+        <div class="risk-header">
+          <span class="risk-id">R-7</span>
+          <span class="risk-category">side-effect</span>
+        </div>
+        <div class="risk-title">factory <code>template/</code> 제거가 이미 ejected 된 8 하네스에 영향?</div>
+        <div class="risk-mitigation"><strong>완화:</strong> 영향 없음 — ejected 하네스는 자체 git 저장소로 독립. 본 PRD 범위 밖 (PRD §5 명시)</div>
+      </div>
+
+      <div class="risk-card side-effect" id="R-8">
+        <div class="risk-header">
+          <span class="risk-id">R-8</span>
+          <span class="risk-category">side-effect</span>
+        </div>
+        <div class="risk-title">vision-intake skill 본문 갱신이 <code>pre-plugin</code> 브랜치 의 옛 skill 과 의미 차이</div>
+        <div class="risk-mitigation"><strong>완화:</strong> 의도된 변경. <code>pre-plugin</code> 브랜치는 historical reference 라 동기화 불필요</div>
+      </div>
+
+      <div class="risk-card breaking" id="R-9">
+        <div class="risk-header">
+          <span class="risk-id">R-9</span>
+          <span class="risk-category">breaking</span>
+        </div>
+        <div class="risk-title"><code>/setup-ralph</code> 가 잘못된 디렉토리 (예: 루트 <code>/</code>, 홈 <code>~</code>) 에서 호출됨</div>
+        <div class="risk-mitigation"><strong>완화:</strong> bash 첫 줄에 가드 — <code>$PWD</code> 가 <code>$HOME</code> 또는 <code>/</code> 면 abort + "전용 디렉토리에서 실행하십시오" 안내</div>
+      </div>
+    </div>
+
+    <div class="risk-note">
+      <code>race</code> 카테고리는 본 피처에 해당 항목 없음 (단일 사용자 / 단일 슬래시 호출 / 동시성 없음).
+    </div>
+  </section>
+
+  <hr class="divider"/>
+
+  <!-- ══════════ §7 TEST STRATEGY ══════════ -->
+  <section id="sec7">
+    <div class="section-header">
+      <div class="section-num">7</div>
+      <h2>테스트 전략</h2>
+    </div>
+
+    <h3 id="s7-1">7.1 Bash 단위 (scripts/setup-ralph.sh)</h3>
+    <ul>
+      <li>인자 파싱: <code>clean</code> (default) / <code>--overlay</code> / <code>--overlay --force</code> 3 케이스 + 잘못된 인자 (<code>--unknown</code>) abort</li>
+      <li>충돌 검사: 빈 디렉토리 / 1파일 있는 디렉토리 / 5파일 모두 있는 디렉토리 각각의 동작</li>
+      <li><code>{{PROJECT_NAME}}</code> 치환: 일반 이름 / 공백 포함 / 한글 / 특수문자 (<code>my&amp;proj</code>) 케이스</li>
+      <li><code>git init -b main</code> 조건 분기: clean+.git없음 / clean+.git있음 / overlay+.git없음 / overlay+.git있음</li>
+      <li>onboarded:true 가드 (<a href="#D-3">D-3</a>): <code>--force</code> 없을 때 abort, 있을 때 백업 후 박음</li>
+    </ul>
+    <p>테스트 프레임: <strong>bats</strong> (bash automated testing system) 또는 단순 bash assert + <code>set -e</code>. 선택은 implementation-plan 영역. 추천: bats (가독성 + macOS brew install bats-core 단순).</p>
+
+    <h3 id="s7-2">7.2 Integration (실제 환경 e2e)</h3>
+    <ul class="ac-list">
+      <li><span class="ac-id">AC-1</span><span>빈 <code>/tmp/test-ralph-clean/</code> → <code>/setup-ralph</code> → 5파일 + .gitignore + VERSION + .claude/settings.json + git init 확인</span></li>
+      <li><span class="ac-id">AC-2</span><span class="ac-manual">manual</span><span>AC-1 직후 vision-intake skill 호출 발화 ("대표님 안녕하십니까") 확인 — 이건 자동화 어려움, manual 검증</span></li>
+      <li><span class="ac-id">AC-3</span><span>5파일 중 하나 있는 디렉토리에서 clean → abort + 안내 메시지</span></li>
+      <li><span class="ac-id">AC-4</span><span>기존 5파일 + .claude/ 있는 디렉토리에서 <code>--overlay</code> → <code>.v2.bak</code> 백업 + v3 새로 박힘</span></li>
+      <li><span class="ac-id">AC-5</span><span>CLAUDE.md 가 onboarded:true 인 디렉토리에서 <code>--overlay</code> → abort + <code>--force</code> 안내</span></li>
+      <li><span class="ac-id">AC-6</span><span>factory main 의 <code>template/</code> / <code>scripts/new-harness.sh</code> 부재 확인 (find / git ls-tree) + <code>pre-plugin</code> 브랜치에 보존 확인 (<code>git show pre-plugin:template/CLAUDE.md</code> 가 hit)</span></li>
+      <li><span class="ac-id">AC-7</span><span class="ac-manual">manual</span><span>vision-intake skill 동결 직후 <code>AskUserQuestion</code> 게이트 발화 확인</span></li>
+      <li><span class="ac-id">AC-8</span><span class="ac-manual">manual</span><span>yes → ralph-loop 활성 / no → 안내문만 (manual 검증)</span></li>
+    </ul>
+
+    <h3 id="s7-3">7.3 정적 검증 (scripts/verify-plugin.sh — 신규)</h3>
+    <p><code>scripts/verify-v3-template.sh</code> 의 11 검증 그룹을 플러그인 구조에 맞춰 재구성:</p>
+    <ol class="verify-list">
+      <li><code>.claude-plugin/plugin.json</code> 존재 + name=<code>ralph-base</code> + version 매칭</li>
+      <li><code>commands/setup-ralph.md</code> 존재 + frontmatter (<code>description</code>, <code>argument-hint</code>, <code>allowed-tools</code>) 검증</li>
+      <li><code>scripts/setup-ralph.sh</code> 존재 + chmod +x + 첫 줄 <code>#!/usr/bin/env bash</code> + <code>set -euo pipefail</code></li>
+      <li><code>assets/template/</code> 안 5파일 + .claude/settings.json + .gitignore + VERSION (값 <code>3</code>) + specs/.gitkeep 존재</li>
+      <li><code>skills/vision-intake/SKILL.md</code> 존재 + frontmatter <code>name: vision-intake</code></li>
+      <li>assets/template/{PROMPT,AGENTS,IMPLEMENTATION_PLAN}.md 의 "대표님" 호칭 부재 (도구 중립 유지)</li>
+      <li>assets/template/{CLAUDE,README}.md + skills/vision-intake/SKILL.md 에는 "대표님" 존재</li>
+      <li>assets/template/CLAUDE.md 의 <code>onboarded:</code> gating 키 + <code>### 1.</code> ~ <code>### 8.</code> 8 placeholder + "미입력" 마커 존재</li>
+      <li>assets/template/.claude/settings.json 에 hooks 섹션 없음 + Edit(CLAUDE.md) 권한 명시</li>
+      <li>(제거 검증) factory 루트에 옛 <code>template/</code> / <code>scripts/new-harness.sh</code> 부재 확인</li>
+      <li>(FR-7 정합) skills/vision-intake/SKILL.md 본문에 "ralph-loop 자동 시작" + AskUserQuestion 게이트 텍스트 존재</li>
+    </ol>
+
+    <h3 id="s7-4">7.4 Regression — 옛 모델 fallback</h3>
+    <p><code>pre-plugin</code> 브랜치 checkout 후 <code>bash scripts/new-harness.sh test-regression</code> 이 옛 흐름대로 동작하는지 1회 확인 (수동). 즉 옛 모델이 보존 브랜치에서 여전히 작동 가능 confirm.</p>
+  </section>
+
+  <!-- ══════════ CHANGELOG FOOTER ══════════ -->
+  <div class="changelog-footer">
+    <strong>변경이력</strong> — 변경이력은 .md 원본 참조
+  </div>
+
+</div>
+
+<script>
+  // Copy button logic
+  function copyCode(btn) {
+    const pre = btn.closest('.code-block-wrap').querySelector('pre');
+    const text = pre.innerText;
+    if (navigator.clipboard) {
+      navigator.clipboard.writeText(text).then(() => {
+        btn.textContent = 'Copied!';
+        btn.classList.add('copied');
+        setTimeout(() => { btn.textContent = 'Copy'; btn.classList.remove('copied'); }, 1800);
+      });
+    }
+  }
+
+  // Smooth scroll for anchor links
+  document.querySelectorAll('a[href^="#"]').forEach(link => {
+    link.addEventListener('click', e => {
+      const target = document.querySelector(link.getAttribute('href'));
+      if (target) {
+        e.preventDefault();
+        target.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      }
+    });
+  });
+</script>
+</body>
+</html>

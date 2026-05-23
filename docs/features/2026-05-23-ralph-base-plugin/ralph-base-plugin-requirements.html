@@ -1,0 +1,1004 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>요구사항: ralph-base-plugin</title>
+<style>
+  :root {
+    --bg-base: #0a0b0f;
+    --bg-card: rgba(13,17,23,0.85);
+    --bg-card-hover: rgba(20,26,35,0.92);
+    --bg-stripe: rgba(255,255,255,0.025);
+    --text-primary: #f0f6fc;
+    --text-secondary: #b0bec5;
+    --text-muted: #6b7a8d;
+    --accent-purple: #a78bfa;
+    --accent-cyan: #22d3ee;
+    --accent-pink: #f472b6;
+    --accent-green: #4ade80;
+    --accent-amber: #fbbf24;
+    --border: rgba(255,255,255,0.08);
+    --border-accent: rgba(167,139,250,0.3);
+    --glow-purple: rgba(167,139,250,0.15);
+    --glow-cyan: rgba(34,211,238,0.1);
+    --shadow-card: 0 8px 32px rgba(0,0,0,0.5);
+    --shadow-hover: 0 16px 48px rgba(0,0,0,0.7), 0 0 32px rgba(167,139,250,0.1);
+    --radius: 14px;
+    --radius-sm: 8px;
+    --font-sans: 'Pretendard', 'Apple SD Gothic Neo', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    --font-mono: 'JetBrains Mono', 'Fira Code', 'SF Mono', monospace;
+  }
+
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    background: var(--bg-base);
+    background-image:
+      radial-gradient(ellipse 80% 50% at 50% -20%, rgba(167,139,250,0.12) 0%, transparent 60%),
+      radial-gradient(ellipse 60% 40% at 80% 80%, rgba(34,211,238,0.07) 0%, transparent 50%),
+      radial-gradient(ellipse 40% 30% at 10% 60%, rgba(244,114,182,0.06) 0%, transparent 50%);
+    background-attachment: fixed;
+    color: var(--text-primary);
+    font-family: var(--font-sans);
+    font-size: 15px;
+    line-height: 1.75;
+    min-height: 100vh;
+    padding-bottom: 80px;
+  }
+
+  /* ── Animated top bar ── */
+  .topbar {
+    position: fixed;
+    top: 0; left: 0; right: 0;
+    height: 3px;
+    background: linear-gradient(90deg, var(--accent-purple), var(--accent-cyan), var(--accent-pink), var(--accent-purple));
+    background-size: 200% 100%;
+    animation: slide 3s linear infinite;
+    z-index: 1000;
+  }
+  @keyframes slide { 0%{background-position:0%} 100%{background-position:200%} }
+
+  /* ── TOC ── */
+  .toc-toggle {
+    position: fixed;
+    top: 20px; right: 20px;
+    background: rgba(13,17,23,0.9);
+    border: 1px solid var(--border-accent);
+    border-radius: var(--radius-sm);
+    padding: 10px 14px;
+    font-size: 13px;
+    color: var(--accent-purple);
+    cursor: pointer;
+    z-index: 999;
+    backdrop-filter: blur(12px);
+    transition: all 0.2s;
+    font-family: var(--font-sans);
+  }
+  .toc-toggle:hover { background: rgba(167,139,250,0.15); }
+
+  .toc-panel {
+    position: fixed;
+    top: 55px; right: 20px;
+    width: 260px;
+    background: rgba(10,11,15,0.97);
+    border: 1px solid var(--border-accent);
+    border-radius: var(--radius);
+    padding: 16px;
+    z-index: 998;
+    backdrop-filter: blur(16px);
+    box-shadow: var(--shadow-card);
+    display: none;
+  }
+  .toc-panel.open { display: block; }
+  .toc-panel h4 { color: var(--accent-purple); font-size: 11px; letter-spacing: 0.12em; text-transform: uppercase; margin-bottom: 10px; }
+  .toc-panel a {
+    display: block;
+    color: var(--text-secondary);
+    text-decoration: none;
+    font-size: 12.5px;
+    padding: 3px 0;
+    transition: color 0.15s;
+    border-left: 2px solid transparent;
+    padding-left: 8px;
+    margin-left: -8px;
+  }
+  .toc-panel a:hover { color: var(--accent-cyan); border-left-color: var(--accent-cyan); }
+  .toc-panel .toc-h3 { padding-left: 20px; font-size: 11.5px; color: var(--text-muted); }
+  .toc-panel .toc-h3:hover { color: var(--accent-purple); border-left-color: var(--accent-purple); }
+
+  /* ── Layout ── */
+  .wrapper {
+    max-width: 900px;
+    margin: 0 auto;
+    padding: 80px 24px 0;
+  }
+
+  /* ── Hero ── */
+  .hero {
+    text-align: center;
+    padding: 60px 0 48px;
+    position: relative;
+  }
+  .hero::after {
+    content: '';
+    position: absolute;
+    bottom: 0; left: 50%; transform: translateX(-50%);
+    width: 200px; height: 1px;
+    background: linear-gradient(90deg, transparent, var(--accent-purple), var(--accent-cyan), transparent);
+  }
+  .hero-label {
+    display: inline-block;
+    font-size: 11px;
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    color: var(--accent-cyan);
+    background: rgba(34,211,238,0.08);
+    border: 1px solid rgba(34,211,238,0.2);
+    padding: 4px 14px;
+    border-radius: 100px;
+    margin-bottom: 20px;
+  }
+  h1 {
+    font-size: clamp(2rem, 5vw, 3.2rem);
+    font-weight: 800;
+    letter-spacing: -0.03em;
+    line-height: 1.15;
+    background: linear-gradient(135deg, #f0f6fc 0%, var(--accent-purple) 40%, var(--accent-cyan) 70%, var(--accent-pink) 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    margin-bottom: 12px;
+  }
+  .hero-meta {
+    font-size: 13px;
+    color: var(--text-muted);
+    display: flex;
+    gap: 20px;
+    justify-content: center;
+    flex-wrap: wrap;
+  }
+  .hero-meta span { display: flex; align-items: center; gap: 6px; }
+  .hero-meta .dot { width: 6px; height: 6px; border-radius: 50%; background: var(--accent-purple); display: inline-block; }
+
+  /* ── Notice block ── */
+  .notice {
+    background: rgba(167,139,250,0.06);
+    border: 1px solid rgba(167,139,250,0.2);
+    border-left: 3px solid var(--accent-purple);
+    border-radius: var(--radius-sm);
+    padding: 16px 20px;
+    margin: 32px 0;
+    font-size: 13.5px;
+    color: var(--text-secondary);
+  }
+  .notice strong { color: var(--accent-purple); }
+  .notice p + p { margin-top: 8px; }
+
+  /* ── Section headings ── */
+  h2 {
+    font-size: 1.5rem;
+    font-weight: 700;
+    letter-spacing: -0.02em;
+    color: var(--text-primary);
+    margin: 56px 0 24px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    position: relative;
+  }
+  h2::before {
+    content: '';
+    display: block;
+    width: 4px;
+    height: 28px;
+    border-radius: 2px;
+    background: linear-gradient(180deg, var(--accent-purple), var(--accent-cyan));
+    flex-shrink: 0;
+  }
+  h2 .h2-num {
+    font-size: 0.7em;
+    color: var(--text-muted);
+    font-weight: 400;
+  }
+
+  h3 {
+    font-size: 1.05rem;
+    font-weight: 600;
+    color: var(--text-primary);
+    margin: 28px 0 12px;
+  }
+
+  /* ── Cards ── */
+  .card {
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 24px 28px;
+    margin-bottom: 16px;
+    backdrop-filter: blur(12px);
+    box-shadow: var(--shadow-card);
+    transition: transform 0.2s, box-shadow 0.2s, border-color 0.2s;
+  }
+  .card:hover {
+    transform: translateY(-2px);
+    box-shadow: var(--shadow-hover);
+    border-color: var(--border-accent);
+  }
+
+  /* ── FR cards ── */
+  .fr-grid {
+    display: grid;
+    gap: 16px;
+  }
+  .fr-card {
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 0;
+    overflow: hidden;
+    backdrop-filter: blur(12px);
+    box-shadow: var(--shadow-card);
+    transition: transform 0.2s, box-shadow 0.2s, border-color 0.2s;
+  }
+  .fr-card:hover {
+    transform: translateY(-2px);
+    box-shadow: var(--shadow-hover);
+    border-color: rgba(167,139,250,0.4);
+  }
+  .fr-header {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    padding: 18px 24px;
+    background: rgba(255,255,255,0.03);
+    border-bottom: 1px solid var(--border);
+  }
+  .fr-badge {
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    padding: 4px 10px;
+    border-radius: 6px;
+    font-family: var(--font-mono);
+    flex-shrink: 0;
+  }
+  .fr-badge.fr1 { background: rgba(167,139,250,0.15); color: var(--accent-purple); border: 1px solid rgba(167,139,250,0.3); }
+  .fr-badge.fr2 { background: rgba(34,211,238,0.12); color: var(--accent-cyan); border: 1px solid rgba(34,211,238,0.25); }
+  .fr-badge.fr3 { background: rgba(244,114,182,0.12); color: var(--accent-pink); border: 1px solid rgba(244,114,182,0.25); }
+  .fr-badge.fr4 { background: rgba(74,222,128,0.1); color: var(--accent-green); border: 1px solid rgba(74,222,128,0.22); }
+  .fr-badge.fr5 { background: rgba(251,191,36,0.1); color: var(--accent-amber); border: 1px solid rgba(251,191,36,0.22); }
+  .fr-badge.fr6 { background: rgba(167,139,250,0.08); color: #c4b5fd; border: 1px solid rgba(167,139,250,0.2); }
+  .fr-badge.fr7 { background: rgba(34,211,238,0.08); color: #67e8f9; border: 1px solid rgba(34,211,238,0.2); }
+
+  .fr-title {
+    font-size: 1rem;
+    font-weight: 600;
+    color: var(--text-primary);
+  }
+  .fr-body {
+    padding: 20px 24px;
+    font-size: 14px;
+    color: var(--text-secondary);
+  }
+  .fr-body ul {
+    list-style: none;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+  }
+  .fr-body ul li {
+    padding-left: 18px;
+    position: relative;
+    line-height: 1.65;
+  }
+  .fr-body ul li::before {
+    content: '▸';
+    position: absolute;
+    left: 0;
+    color: var(--accent-purple);
+    font-size: 10px;
+    top: 5px;
+  }
+  .fr-body p {
+    margin-bottom: 10px;
+    line-height: 1.7;
+  }
+  .fr-body p:last-child { margin-bottom: 0; }
+  .fr-body strong { color: var(--text-primary); font-weight: 600; }
+  .fr-body code {
+    font-family: var(--font-mono);
+    font-size: 12.5px;
+    background: rgba(255,255,255,0.07);
+    border: 1px solid rgba(255,255,255,0.1);
+    border-radius: 4px;
+    padding: 1px 6px;
+    color: var(--accent-cyan);
+  }
+  .fr-body em { color: var(--accent-amber); font-style: italic; }
+
+  /* FR-7 fixed call spec box */
+  .spec-box {
+    background: rgba(167,139,250,0.06);
+    border: 1px solid rgba(167,139,250,0.2);
+    border-radius: var(--radius-sm);
+    padding: 14px 18px;
+    margin-top: 14px;
+    font-size: 13.5px;
+  }
+  .spec-box-title {
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 0.12em;
+    color: var(--accent-purple);
+    margin-bottom: 10px;
+    font-weight: 600;
+  }
+  .spec-box ul {
+    list-style: none;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+  }
+  .spec-box ul li {
+    padding-left: 0;
+    position: relative;
+  }
+  .spec-box ul li::before { display: none; }
+  .spec-box .spec-kv {
+    display: flex;
+    gap: 10px;
+  }
+  .spec-box .spec-key {
+    color: var(--text-muted);
+    font-family: var(--font-mono);
+    font-size: 12px;
+    min-width: 130px;
+    flex-shrink: 0;
+  }
+  .spec-box .spec-val {
+    color: var(--accent-cyan);
+    font-family: var(--font-mono);
+    font-size: 12px;
+  }
+
+  /* ── AC checklist ── */
+  .ac-list {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+  }
+  .ac-item {
+    display: flex;
+    gap: 14px;
+    align-items: flex-start;
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    padding: 16px 20px;
+    backdrop-filter: blur(8px);
+    transition: border-color 0.2s, background 0.2s;
+    cursor: pointer;
+  }
+  .ac-item:hover { border-color: var(--border-accent); background: var(--bg-card-hover); }
+  .ac-item.checked {
+    border-color: rgba(74,222,128,0.3);
+    background: rgba(74,222,128,0.04);
+  }
+  .ac-check {
+    width: 20px;
+    height: 20px;
+    border: 2px solid var(--text-muted);
+    border-radius: 5px;
+    flex-shrink: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-top: 2px;
+    transition: all 0.2s;
+    font-size: 12px;
+    color: var(--accent-green);
+  }
+  .ac-item.checked .ac-check {
+    border-color: var(--accent-green);
+    background: rgba(74,222,128,0.15);
+  }
+  .ac-badge {
+    font-size: 11px;
+    font-weight: 700;
+    font-family: var(--font-mono);
+    color: var(--accent-green);
+    background: rgba(74,222,128,0.1);
+    border: 1px solid rgba(74,222,128,0.2);
+    padding: 2px 8px;
+    border-radius: 5px;
+    flex-shrink: 0;
+    margin-top: 2px;
+  }
+  .ac-item.checked .ac-badge {
+    background: rgba(74,222,128,0.2);
+  }
+  .ac-content {
+    flex: 1;
+    font-size: 14px;
+    color: var(--text-secondary);
+    line-height: 1.65;
+  }
+  .ac-content strong { color: var(--text-primary); }
+  .ac-content code {
+    font-family: var(--font-mono);
+    font-size: 12px;
+    background: rgba(255,255,255,0.07);
+    border: 1px solid rgba(255,255,255,0.1);
+    border-radius: 3px;
+    padding: 1px 5px;
+    color: var(--accent-cyan);
+  }
+
+  /* ── Out of scope ── */
+  .oos-grid {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+  }
+  .oos-item {
+    display: flex;
+    gap: 12px;
+    align-items: flex-start;
+    background: rgba(255,255,255,0.02);
+    border: 1px solid rgba(255,255,255,0.06);
+    border-radius: var(--radius-sm);
+    padding: 14px 18px;
+  }
+  .oos-x {
+    font-size: 14px;
+    flex-shrink: 0;
+    margin-top: 2px;
+    opacity: 0.6;
+  }
+  .oos-content {
+    font-size: 13.5px;
+    color: var(--text-muted);
+    line-height: 1.65;
+    text-decoration: line-through;
+    text-decoration-color: rgba(255,255,255,0.2);
+  }
+  .oos-content strong {
+    color: var(--text-secondary);
+    text-decoration: none;
+  }
+  .oos-content code {
+    font-family: var(--font-mono);
+    font-size: 12px;
+    background: rgba(255,255,255,0.05);
+    border-radius: 3px;
+    padding: 1px 5px;
+    text-decoration: none;
+  }
+  .oos-exception {
+    background: rgba(34,211,238,0.05);
+    border: 1px solid rgba(34,211,238,0.15);
+    border-radius: var(--radius-sm);
+    padding: 12px 16px;
+    font-size: 13px;
+    color: var(--accent-cyan);
+    margin-top: 12px;
+  }
+
+  /* ── Plain content sections ── */
+  .content-block {
+    font-size: 14.5px;
+    color: var(--text-secondary);
+    line-height: 1.8;
+  }
+  .content-block ul {
+    list-style: none;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    margin-top: 8px;
+  }
+  .content-block ul li {
+    padding-left: 20px;
+    position: relative;
+  }
+  .content-block ul li::before {
+    content: '▸';
+    position: absolute;
+    left: 0;
+    color: var(--accent-purple);
+    font-size: 10px;
+    top: 5px;
+  }
+  .content-block code {
+    font-family: var(--font-mono);
+    font-size: 12.5px;
+    background: rgba(255,255,255,0.07);
+    border: 1px solid rgba(255,255,255,0.1);
+    border-radius: 4px;
+    padding: 1px 6px;
+    color: var(--accent-cyan);
+  }
+  .content-block strong { color: var(--text-primary); }
+  .content-block em { color: var(--accent-amber); font-style: italic; }
+
+  /* ── N/A blocks ── */
+  .na-block {
+    background: rgba(255,255,255,0.02);
+    border: 1px solid rgba(255,255,255,0.06);
+    border-radius: var(--radius-sm);
+    padding: 16px 20px;
+    color: var(--text-muted);
+    font-size: 14px;
+    font-style: italic;
+  }
+
+  /* ── Footer / changelog ── */
+  .changelog-block {
+    color: var(--text-muted);
+    font-size: 13px;
+    font-style: italic;
+    padding: 16px 0;
+  }
+
+  /* ── Divider ── */
+  .divider {
+    border: none;
+    border-top: 1px solid var(--border);
+    margin: 40px 0 0;
+  }
+
+  /* ── Cross-ref links ── */
+  a.fr-ref {
+    color: var(--accent-cyan);
+    text-decoration: none;
+    font-family: var(--font-mono);
+    font-size: 0.9em;
+    border-bottom: 1px dashed rgba(34,211,238,0.3);
+    transition: border-color 0.15s;
+  }
+  a.fr-ref:hover { border-bottom-color: var(--accent-cyan); }
+
+  /* ── Section intro text ── */
+  .section-intro {
+    color: var(--text-secondary);
+    font-size: 14px;
+    margin-bottom: 20px;
+    line-height: 1.7;
+  }
+
+  /* ── Sub-section inside card ── */
+  .sub-section { margin-top: 20px; }
+  .sub-section-title {
+    font-size: 12px;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    color: var(--text-muted);
+    margin-bottom: 10px;
+  }
+
+  /* responsive */
+  @media (max-width: 640px) {
+    .wrapper { padding: 70px 16px 0; }
+    h1 { font-size: 1.8rem; }
+    .fr-header { flex-wrap: wrap; }
+    .toc-panel { width: 220px; }
+  }
+</style>
+</head>
+<body>
+
+<div class="topbar"></div>
+
+<!-- TOC toggle -->
+<button class="toc-toggle" onclick="document.querySelector('.toc-panel').classList.toggle('open')">☰ 목차</button>
+<nav class="toc-panel" aria-label="목차">
+  <h4>목차</h4>
+  <a href="#bg">1. 배경/목적</a>
+  <a href="#section-11" class="toc-h3">1.1 현재 (factory 모델)</a>
+  <a href="#section-12" class="toc-h3">1.2 목적</a>
+  <a href="#section-13" class="toc-h3">1.3 부수 효과</a>
+  <a href="#stories">2. 사용자 스토리 / 시나리오</a>
+  <a href="#fr">3. 기능 요구사항 (FR)</a>
+  <a href="#fr-1" class="toc-h3">FR-1 /setup-ralph (clean)</a>
+  <a href="#fr-2" class="toc-h3">FR-2 --overlay</a>
+  <a href="#fr-3" class="toc-h3">FR-3 vision-intake 트리거</a>
+  <a href="#fr-4" class="toc-h3">FR-4 git init 자동</a>
+  <a href="#fr-5" class="toc-h3">FR-5 종료 안내 메시지</a>
+  <a href="#fr-6" class="toc-h3">FR-6 factory deprecation</a>
+  <a href="#fr-7" class="toc-h3">FR-7 ralph-loop 자동 시작 게이트</a>
+  <a href="#nfr">4. 비기능 요구사항 (NFR)</a>
+  <a href="#oos">5. 범위 밖 (Out of Scope)</a>
+  <a href="#ac">6. 수용 기준 (Acceptance Criteria)</a>
+  <a href="#changelog">변경이력</a>
+</nav>
+
+<div class="wrapper">
+
+  <!-- Hero -->
+  <header class="hero">
+    <div class="hero-label">PRD · 내부 도구 / Claude Code 플러그인</div>
+    <h1>요구사항: ralph-base-plugin</h1>
+    <div class="hero-meta">
+      <span><span class="dot"></span> 2026-05-23</span>
+      <span><span class="dot" style="background:var(--accent-cyan)"></span> v3-classic</span>
+      <span><span class="dot" style="background:var(--accent-pink)"></span> Category (b) 내부 도구 / 스크립트</span>
+    </div>
+  </header>
+
+  <!-- Notice block -->
+  <div class="notice">
+    <p><strong>For agentic workers:</strong> This document is the PRD (planning-level only). NEXT STEP: invoke <code>designing-direction</code> skill (or run <code>/design</code>) to produce <code>&lt;slug&gt;-tech-design.md</code> from this document. Do NOT add tech decisions or implementation details here — those belong in the next two artifacts.</p>
+    <p><strong>Category:</strong> (b) 내부 도구 / 스크립트 — Claude Code 플러그인 배포물. 사용자 스토리 / NFR 스킵, 범위 밖 / 수용 기준 간소화.</p>
+  </div>
+
+  <hr class="divider">
+
+  <!-- Section 1 -->
+  <section id="bg">
+    <h2><span class="h2-num">1</span> 배경/목적</h2>
+
+    <h3 id="section-11">1.1 현재 (factory 모델)</h3>
+    <div class="card content-block">
+      <ul>
+        <li>새 ralph 하네스는 <code>js-ralph</code> factory 저장소를 clone → <code>bash scripts/new-harness.sh &lt;NAME&gt;</code> → <code>~/jinsup_ralph/&lt;NAME&gt;/</code> 로 eject. 사용자가 factory 저장소 자체를 갖고 있어야 한다.</li>
+        <li><code>template/</code> 5파일 + <code>.claude/skills/vision-intake/</code> + <code>.claude/settings.json</code> + <code>.gitignore</code> + <code>VERSION</code> 이 매번 ejected 하네스로 복사된다.</li>
+        <li>factory 갱신은 신규 eject 부터만 자동 적용된다. 이미 ejected 된 8 하네스 (Nova / TtokTtok / PlanB / shortdub / chuljeun-nyang / king_of_law / ai_news_scraping / autoproducts-feature-dev) 는 동기화 안 됨 — 옛 skill 이름 <code>onboarding/</code> 그대로 남아 빌트인과 충돌하는 케이스가 이미 발생.</li>
+      </ul>
+    </div>
+
+    <h3 id="section-12">1.2 목적</h3>
+    <div class="card content-block">
+      <p>Claude Code 플러그인 <code>ralph-base</code> (가칭) 한 번 설치 → 어느 디렉토리에서든 <code>/setup-ralph</code> 슬래시 한 번에 v3-classic 하네스 세팅 + vision-intake 자동 트리거.</p>
+    </div>
+
+    <h3 id="section-13">1.3 부수 효과</h3>
+    <div class="card content-block">
+      <ul>
+        <li>factory <code>scripts/new-harness.sh</code> 가 deprecate 됨 (즉시 제거 X — <code>pre-plugin</code> 브랜치에 보존)</li>
+        <li>template 단일 출처가 factory → 플러그인으로 이동</li>
+        <li>신규 하네스의 위치 자유 (<code>~/jinsup_ralph/</code> 강제 X)</li>
+        <li>플러그인 업데이트가 모든 신규 하네스에 즉시 반영</li>
+        <li>factory 갱신과 ejected 하네스 사이의 drift 문제 자체 소멸 (새 하네스마다 최신 플러그인이 작동)</li>
+      </ul>
+    </div>
+  </section>
+
+  <hr class="divider">
+
+  <!-- Section 2 -->
+  <section id="stories">
+    <h2><span class="h2-num">2</span> 사용자 스토리 / 시나리오</h2>
+    <div class="na-block">해당 없음 — 내부 도구라 외부 사용자 없음 (사용자 = 대표님 본인 + 가까운 협업자).</div>
+  </section>
+
+  <hr class="divider">
+
+  <!-- Section 3: FR -->
+  <section id="fr">
+    <h2><span class="h2-num">3</span> 기능 요구사항 (FR)</h2>
+
+    <div class="fr-grid">
+
+      <!-- FR-1 -->
+      <div class="fr-card" id="fr-1">
+        <div class="fr-header">
+          <span class="fr-badge fr1">FR-1</span>
+          <div class="fr-title"><code>/setup-ralph</code> (clean 모드, 기본)</div>
+        </div>
+        <div class="fr-body">
+          <ul>
+            <li>현재 디렉토리에 5파일 (CLAUDE.md / PROMPT.md / AGENTS.md / IMPLEMENTATION_PLAN.md / README.md) 중 하나라도 이미 있으면 abort + "--overlay 모드 쓰십시오" 안내. abort 시 어떤 파일도 안 박음.</li>
+            <li>충돌 없으면 박는 것:
+              <ul style="margin-top:8px">
+                <li>5파일 (CLAUDE.md / PROMPT.md / AGENTS.md / IMPLEMENTATION_PLAN.md / README.md)</li>
+                <li><code>.claude/settings.json</code></li>
+                <li><code>.gitignore</code></li>
+                <li><code>VERSION</code> (현재 3)</li>
+                <li><code>specs/.gitkeep</code></li>
+              </ul>
+            </li>
+            <li>CLAUDE.md / README.md 의 <code>{{PROJECT_NAME}}</code> placeholder 는 현재 디렉토리 basename 으로 자동 치환.</li>
+          </ul>
+        </div>
+      </div>
+
+      <!-- FR-2 -->
+      <div class="fr-card" id="fr-2">
+        <div class="fr-header">
+          <span class="fr-badge fr2">FR-2</span>
+          <div class="fr-title"><code>/setup-ralph --overlay</code> (overlay 모드)</div>
+        </div>
+        <div class="fr-body">
+          <ul>
+            <li>기존 5파일 중 충돌하는 것만 <code>&lt;filename&gt;.v2.bak</code> 접미사로 mv 후 v3 박음.</li>
+            <li><code>.claude/</code> 디렉토리가 이미 있으면 <code>.claude.v2.bak/</code> 로 mv 후 새로 박음 (settings.json 도 새것으로).</li>
+            <li><strong>CLAUDE.md 가 이미 <code>onboarded: true</code> 상태면 abort</strong> + 안내 ("대표님 비전이 합성되어 있습니다. 정말 덮을지 명시적 <code>--force</code> 옵션을 주십시오 — 또는 별도 폴더에 박으십시오"). 비전 자동 마이그는 본 플러그인 범위 밖.</li>
+            <li><code>.gitignore</code> / <code>VERSION</code> 도 동일 패턴 (<code>.v2.bak</code> 백업 후 새로).</li>
+          </ul>
+        </div>
+      </div>
+
+      <!-- FR-3 -->
+      <div class="fr-card" id="fr-3">
+        <div class="fr-header">
+          <span class="fr-badge fr3">FR-3</span>
+          <div class="fr-title">vision-intake skill 자동 트리거</div>
+        </div>
+        <div class="fr-body">
+          <ul>
+            <li>세팅 완료 후, 박힌 CLAUDE.md 의 <code>onboarded: false</code> 상태가 Claude Code 의 자동 로드 + skill 트리거 메커니즘에 의해 vision-intake skill 을 호출하도록 한다.</li>
+            <li>슬래시 명령 자체가 vision-intake 를 즉시 invoke 하는 것도 옵션 — 어느 쪽이든 사용자가 별도 발화 ("vision-intake 시작해줘") 없이 인터뷰가 시작되는 것이 요구사항.</li>
+          </ul>
+        </div>
+      </div>
+
+      <!-- FR-4 -->
+      <div class="fr-card" id="fr-4">
+        <div class="fr-header">
+          <span class="fr-badge fr4">FR-4</span>
+          <div class="fr-title">git init 자동 (clean 모드 한정)</div>
+        </div>
+        <div class="fr-body">
+          <ul>
+            <li>clean 모드 + 현재 디렉토리에 <code>.git</code> 없으면 → <code>git init -b main</code> + 5파일 + 부속 파일 <code>git add</code> + 초기 commit (<code>chore: scaffold from ralph-base-plugin v&lt;VERSION&gt;</code>).</li>
+            <li>overlay 모드 또는 <code>.git</code> 이미 있으면 skip — 사용자가 기존 git history 에 자기 commit 으로 박음.</li>
+          </ul>
+        </div>
+      </div>
+
+      <!-- FR-5 -->
+      <div class="fr-card" id="fr-5">
+        <div class="fr-header">
+          <span class="fr-badge fr5">FR-5</span>
+          <div class="fr-title">슬래시 종료 후 안내 메시지</div>
+        </div>
+        <div class="fr-body">
+          <p>세팅 완료 시 사용자에게 한 화면으로:</p>
+          <ul>
+            <li>무엇이 박혔는지 (clean / overlay / 백업된 파일 목록)</li>
+            <li>다음 단계: "vision-intake 가 자동 트리거됩니다. 8 질문 답변 → '확정' 발화 → <code>onboarded: true</code> 동결 → ralph-loop 자동 시작 게이트 (<a href="#fr-7" class="fr-ref">FR-7</a>)"</li>
+          </ul>
+        </div>
+      </div>
+
+      <!-- FR-6 -->
+      <div class="fr-card" id="fr-6">
+        <div class="fr-header">
+          <span class="fr-badge fr6">FR-6</span>
+          <div class="fr-title">factory deprecation</div>
+        </div>
+        <div class="fr-body">
+          <ul>
+            <li>factory <code>README.md</code> + <code>CLAUDE.md</code> 상단에 "플러그인 사용 권장" deprecation notice 추가.</li>
+            <li><code>scripts/new-harness.sh</code> 는 deprecated 표시 + 본문 첫 줄에 <code>echo "[deprecated] use Claude Code 'ralph-base' plugin: /setup-ralph"</code> 추가. 동작은 유지 (호환성).</li>
+            <li><code>template/</code> 자체는 즉시 제거 X — 플러그인이 내부적으로 동일 template 을 갖되, factory 의 <code>template/</code> 은 reference 용으로 한동안 보존. (제거 시점은 별도 결정)</li>
+            <li>factory 의 <code>verify-v3-template.sh</code> 가 플러그인 안 template 도 검증할 수 있도록 path 일반화 — 또는 플러그인 안에 별도 검증 스크립트 분리 (이건 tech-design 영역).</li>
+            <li><code>pre-plugin</code> 브랜치에 옛 factory 모델 (template/ 살아있는 상태) 가 이미 박혀 있음 (commit <code>b8fb626</code>).</li>
+          </ul>
+        </div>
+      </div>
+
+      <!-- FR-7 -->
+      <div class="fr-card" id="fr-7">
+        <div class="fr-header">
+          <span class="fr-badge fr7">FR-7</span>
+          <div class="fr-title">vision-intake 종료 직후 ralph-loop 자동 시작 게이트</div>
+        </div>
+        <div class="fr-body">
+          <p>vision-intake skill 이 "확정" 발화 처리 + <code>onboarded: true</code> 박은 직후, 사용자에게 1회 게이트:</p>
+          <ul>
+            <li><code>AskUserQuestion("ralph-loop 를 지금 자동 시작할까요?", choices=[yes / no])</code></li>
+            <li><strong>yes</strong>: vision-intake skill 본문이 Bash 도구로 <code>setup-ralph-loop.sh</code> 를 <strong>고정 인자</strong> 로 호출 → Stop hook 자동 활성화 → 다음 Stop 부터 fresh context 로 매 iteration 재투입. 사용자가 슬래시 명령을 직접 입력하지 않음. <strong>자연어 인자는 절대 박지 않음</strong> (직전 세션에서 자연어 인자 박아 shell glob 으로 fail + 의도치 않은 loop 활성화 사고 발생).</li>
+            <li><strong>no</strong>: 안내문만 노출 (수동 실행용 슬래시 명령 한 줄 + cancel 방법).</li>
+          </ul>
+
+          <div class="spec-box">
+            <div class="spec-box-title">고정 호출 명세</div>
+            <ul>
+              <li>
+                <div class="spec-kv">
+                  <span class="spec-key">prompt:</span>
+                  <span class="spec-val">"Read PROMPT.md and follow it."</span>
+                </div>
+              </li>
+              <li>
+                <div class="spec-kv">
+                  <span class="spec-key">completion-promise:</span>
+                  <span class="spec-val">"PROJECT_DONE"</span>
+                </div>
+              </li>
+              <li>
+                <div class="spec-kv">
+                  <span class="spec-key">max-iterations:</span>
+                  <span class="spec-val">기본 150 (CLAUDE.md §7 명시값 우선)</span>
+                </div>
+              </li>
+            </ul>
+          </div>
+
+          <div class="sub-section">
+            <p><strong>영향 범위</strong>: 본 PRD 가 ralph-base 플러그인이 자체 동봉할 <code>vision-intake</code> skill 본문도 함께 갱신함을 명시한다 — 현재 <code>template/.claude/skills/vision-intake/SKILL.md</code> 의 "5단계 동결 실행 절차" 끝에 본 게이트를 추가.</p>
+          </div>
+        </div>
+      </div>
+
+    </div><!-- /fr-grid -->
+  </section>
+
+  <hr class="divider">
+
+  <!-- Section 4 -->
+  <section id="nfr">
+    <h2><span class="h2-num">4</span> 비기능 요구사항 (NFR)</h2>
+    <div class="na-block">해당 없음 — 내부 도구라 성능/가용성 메트릭 의미 적음. 안전 관련 가드만 FR 안에 명시 (<a href="#fr-1" class="fr-ref">FR-1</a> 의 충돌 abort, <a href="#fr-2" class="fr-ref">FR-2</a> 의 onboarded:true abort).</div>
+  </section>
+
+  <hr class="divider">
+
+  <!-- Section 5: Out of Scope -->
+  <section id="oos">
+    <h2><span class="h2-num">5</span> 범위 밖 (Out of Scope)</h2>
+    <p class="section-intro">대화 중 명시 + 추가 정리:</p>
+
+    <div class="oos-grid">
+      <div class="oos-item">
+        <span class="oos-x">❌</span>
+        <div class="oos-content"><strong>이미 ejected 된 8 하네스의 마이그레이션</strong> — 본 플러그인 적용 안 함. 신규 하네스부터. (HANDOFF.md §1.3.1 의 기존 정책 그대로)</div>
+      </div>
+      <div class="oos-item">
+        <span class="oos-x">❌</span>
+        <div class="oos-content"><strong>ralph-loop 플러그인과의 통합</strong> — 별도 플러그인 그대로. 사용자가 <code>/plugin install ralph-loop</code> 별도 1회. ralph-base 플러그인은 ralph-loop 의 <code>setup-ralph-loop.sh</code> 경로를 직접 호출만 함 (<a href="#fr-7" class="fr-ref" style="text-decoration:none">FR-7</a>) — 본체 수정 X.</div>
+      </div>
+
+      <!-- Exception notice -->
+      <div class="oos-exception">
+        ⚠ <strong>예외 (범위 안):</strong> vision-intake skill 본문 수정은 본 PRD 범위 안 (<a href="#fr-7" class="fr-ref">FR-7</a>) — 단, 비전 인터뷰 8 질문 catalog 자체는 변경 X. 마지막 동결 단계 끝에 자동 시작 게이트만 추가.
+      </div>
+
+      <div class="oos-item">
+        <span class="oos-x">❌</span>
+        <div class="oos-content"><strong>CLAUDE.md 비전 자동 마이그</strong> (PlanB 케이스처럼 <code>.claude.v2.bak/state/intake/master-spec.md</code> → 새 CLAUDE.md 8 자리로 옮김) — overlay 모드 가드만 박고 (<a href="#fr-2" class="fr-ref" style="text-decoration:none">FR-2</a> 의 onboarded:true abort), 실제 마이그는 사용자가 ralph 한테 자연어로 지시.</div>
+      </div>
+      <div class="oos-item">
+        <span class="oos-x">❌</span>
+        <div class="oos-content"><strong>플러그인 marketplace 공개 등록</strong> — 일단 로컬/팀 dev plugin 으로만. 공개 등록은 별도 결정.</div>
+      </div>
+      <div class="oos-item">
+        <span class="oos-x">❌</span>
+        <div class="oos-content"><strong>Windows / Linux 지원</strong> — macOS (darwin) 기준만. factory 가 이미 <code>gsed</code> 등 darwin 가정 — 플러그인도 동일.</div>
+      </div>
+      <div class="oos-item">
+        <span class="oos-x">❌</span>
+        <div class="oos-content"><strong>새로운 ralph 행동 규칙</strong> — PROMPT.md 본문은 현재 v3-classic 그대로. 행동 변경 없음. 본 작업은 배포/세팅 메커니즘만 변경.</div>
+      </div>
+      <div class="oos-item">
+        <span class="oos-x">❌</span>
+        <div class="oos-content"><strong>template 5파일 내용 변경</strong> — 본 작업 범위 밖. 5파일 내용 변경이 필요하면 별도 PR.</div>
+      </div>
+      <div class="oos-item">
+        <span class="oos-x">❌</span>
+        <div class="oos-content"><strong>factory <code>template/</code> 즉시 제거</strong> — <code>pre-plugin</code> 브랜치에 보존 + main 의 <code>template/</code> 도 한동안 reference 로 둠. 제거 시점은 별도 결정.</div>
+      </div>
+    </div>
+  </section>
+
+  <hr class="divider">
+
+  <!-- Section 6: AC -->
+  <section id="ac">
+    <h2><span class="h2-num">6</span> 수용 기준 (Acceptance Criteria)</h2>
+
+    <div class="ac-list">
+
+      <div class="ac-item" onclick="this.classList.toggle('checked'); this.querySelector('.ac-check').textContent = this.classList.contains('checked') ? '✓' : ''">
+        <div class="ac-check"></div>
+        <span class="ac-badge">AC-1</span>
+        <div class="ac-content">
+          <strong>(clean 정상 경로)</strong>: 빈 디렉토리 <code>~/test-ralph-clean/</code> 에서 <code>/setup-ralph</code> → 5파일 + <code>.claude/settings.json</code> + <code>.gitignore</code> + <code>VERSION=3</code> + <code>specs/.gitkeep</code> 박힘. CLAUDE.md / README.md 의 <code>{{PROJECT_NAME}}</code> = <code>test-ralph-clean</code> 치환됨. <code>.git/</code> 생성 + main 브랜치 + 초기 commit 1건.
+        </div>
+      </div>
+
+      <div class="ac-item" onclick="this.classList.toggle('checked'); this.querySelector('.ac-check').textContent = this.classList.contains('checked') ? '✓' : ''">
+        <div class="ac-check"></div>
+        <span class="ac-badge">AC-2</span>
+        <div class="ac-content">
+          <strong>(vision-intake 자동 트리거)</strong>: AC-1 직후 (또는 같은 슬래시 세션 끝에) vision-intake skill 이 호출되어 "대표님 안녕하십니까. ralph 입니다. 프로젝트를 시작하기 전에 8가지 질문을 드리겠습니다." 첫 줄이 발화됨.
+        </div>
+      </div>
+
+      <div class="ac-item" onclick="this.classList.toggle('checked'); this.querySelector('.ac-check').textContent = this.classList.contains('checked') ? '✓' : ''">
+        <div class="ac-check"></div>
+        <span class="ac-badge">AC-3</span>
+        <div class="ac-content">
+          <strong>(clean abort)</strong>: 5파일 중 하나 (예: <code>PROMPT.md</code>) 가 이미 있는 디렉토리에서 <code>/setup-ralph</code> (clean) → 아무것도 안 박힘 + "이미 PROMPT.md 가 있습니다. <code>/setup-ralph --overlay</code> 를 사용하십시오" 안내.
+        </div>
+      </div>
+
+      <div class="ac-item" onclick="this.classList.toggle('checked'); this.querySelector('.ac-check').textContent = this.classList.contains('checked') ? '✓' : ''">
+        <div class="ac-check"></div>
+        <span class="ac-badge">AC-4</span>
+        <div class="ac-content">
+          <strong>(overlay 정상)</strong>: 기존 5파일 + <code>.claude/</code> 있는 디렉토리 (예: PlanB 시뮬레이션) 에서 <code>/setup-ralph --overlay</code> → 충돌 파일들이 <code>.v2.bak</code> 접미사로 mv 됨, v3 5파일 + <code>.claude/</code> 새로 박힘.
+        </div>
+      </div>
+
+      <div class="ac-item" onclick="this.classList.toggle('checked'); this.querySelector('.ac-check').textContent = this.classList.contains('checked') ? '✓' : ''">
+        <div class="ac-check"></div>
+        <span class="ac-badge">AC-5</span>
+        <div class="ac-content">
+          <strong>(overlay 비전 보호)</strong>: CLAUDE.md 가 <code>onboarded: true</code> 인 디렉토리에서 <code>/setup-ralph --overlay</code> → abort + "대표님 비전 합성본 보호 — <code>--force</code> 또는 별도 폴더 사용 안내". 어떤 파일도 안 박힘.
+        </div>
+      </div>
+
+      <div class="ac-item" onclick="this.classList.toggle('checked'); this.querySelector('.ac-check').textContent = this.classList.contains('checked') ? '✓' : ''">
+        <div class="ac-check"></div>
+        <span class="ac-badge">AC-6</span>
+        <div class="ac-content">
+          <strong>(factory deprecation 안내)</strong>: factory <code>scripts/new-harness.sh</code> 실행 시 첫 줄에 deprecation notice 출력 후 정상 동작.
+        </div>
+      </div>
+
+      <div class="ac-item" onclick="this.classList.toggle('checked'); this.querySelector('.ac-check').textContent = this.classList.contains('checked') ? '✓' : ''">
+        <div class="ac-check"></div>
+        <span class="ac-badge">AC-7</span>
+        <div class="ac-content">
+          <strong>(ralph-loop 자동 시작 — yes)</strong>: vision-intake 종료 후 게이트에서 "yes" 답 → <code>setup-ralph-loop.sh</code> 가 고정 인자로 호출됨 + <code>.claude/ralph-loop.local.md</code> 가 생성됨 + Stop hook 활성. 다음 Stop 부터 <code>Read PROMPT.md and follow it.</code> 가 fresh context 로 재투입.
+        </div>
+      </div>
+
+      <div class="ac-item" onclick="this.classList.toggle('checked'); this.querySelector('.ac-check').textContent = this.classList.contains('checked') ? '✓' : ''">
+        <div class="ac-check"></div>
+        <span class="ac-badge">AC-8</span>
+        <div class="ac-content">
+          <strong>(ralph-loop 수동 — no)</strong>: 게이트에서 "no" 답 → 어떤 명령도 실행되지 않음 + 수동 실행용 슬래시 한 줄 + <code>/ralph-loop:cancel-ralph</code> 로 멈출 수 있다는 안내 노출.
+        </div>
+      </div>
+
+    </div>
+  </section>
+
+  <hr class="divider">
+
+  <!-- Changelog -->
+  <section id="changelog">
+    <h2>변경이력</h2>
+    <div class="changelog-block">변경이력은 .md 원본 참조 (change-history skill 자동 추가)</div>
+  </section>
+
+</div><!-- /wrapper -->
+
+<script>
+  // Close TOC when clicking outside
+  document.addEventListener('click', function(e) {
+    const panel = document.querySelector('.toc-panel');
+    const toggle = document.querySelector('.toc-toggle');
+    if (panel.classList.contains('open') && !panel.contains(e.target) && !toggle.contains(e.target)) {
+      panel.classList.remove('open');
+    }
+  });
+
+  // Smooth scroll for TOC links
+  document.querySelectorAll('.toc-panel a[href^="#"]').forEach(function(a) {
+    a.addEventListener('click', function(e) {
+      e.preventDefault();
+      const target = document.querySelector(this.getAttribute('href'));
+      if (target) {
+        target.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        document.querySelector('.toc-panel').classList.remove('open');
+      }
+    });
+  });
+
+  // Smooth scroll for FR cross-refs
+  document.querySelectorAll('a.fr-ref[href^="#"]').forEach(function(a) {
+    a.addEventListener('click', function(e) {
+      e.preventDefault();
+      const target = document.querySelector(this.getAttribute('href'));
+      if (target) target.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    });
+  });
+</script>
+
+</body>
+</html>
