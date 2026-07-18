@@ -89,7 +89,7 @@ argument-hint: "<추가하고 싶은 요구 자유 텍스트 — 줄바꿈/구�
 스킵: {사유 — 중복 / 범위 밖}
 
 다음 단계:
-ralph-loop 재시작 → /ralph-loop:ralph-loop "Read PROMPT.md and follow it." --completion-promise "PROJECT_DONE" --max-iterations {권장 N}
+goal 루프 재시작 → /goal "Read PROMPT.md and follow it." --completion-promise "PROJECT_DONE" --max-iterations {권장 N}
 (권장 N = 추가 task 수 × 1.3, 검증 재시도 여유 포함)
 ```
 
@@ -98,5 +98,5 @@ ralph-loop 재시작 → /ralph-loop:ralph-loop "Read PROMPT.md and follow it." 
 - vision-intake skill 트리거 금지 (`onboarded` 값 건드리지 마십시오 — 비전 동결 유지)
 - `CLAUDE.md` 의 "비전 / 사양" 섹션 수정 금지 (이건 대표님이 직접 손볼 영역)
 - `PROMPT.md` / `AGENTS.md` 수정 금지 (도구 중립 / 검증 정의는 대표님 영역)
-- ralph-loop 자동 시작 금지 — task 만 추가하고 대표님이 직접 재시작하도록 안내까지만
+- goal 루프 자동 시작 금지 — task 만 추가하고 대표님이 직접 재시작하도록 안내까지만
 - `## DONE` 섹션 건드리지 마십시오 (참고용 로그 보존)

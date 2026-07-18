@@ -14,8 +14,9 @@
 ```
 # Claude Code 안에서 한 번:
 /plugin install js-ralph
-/plugin install ralph-loop
 ```
+
+> goal 루프(`/goal` + 자기 재투입 Stop hook)는 js-ralph 에 내재화돼 있어 별도 `ralph-loop` 플러그인 설치가 필요 없습니다 (v1.2.0+).
 
 ### 2) 새 ralph 프로젝트 시작
 
@@ -32,7 +33,7 @@ claude
 
 → 5파일 (CLAUDE.md / PROMPT.md / AGENTS.md / IMPLEMENTATION_PLAN.md / README.md) + 부속 파일이 박히고, vision-intake 비전 인터뷰 (8 질문) 가 즉시 시작됩니다.
 
-대표님 답변 → "확정" 발화 → `onboarded: true` 동결 → FR-7 자동 시작 게이트 ("ralph-loop 자동 시작?" yes/no) → yes 면 ralph-loop 즉시 활성.
+대표님 답변 → "확정" 발화 → `onboarded: true` 동결 → FR-7 자동 시작 게이트 ("goal 루프 자동 시작?" yes/no) → yes 면 goal 루프 즉시 활성.
 
 ### 옵션: 기존 코드 위에 overlay 모드
 
@@ -61,9 +62,9 @@ claude
 
 | # | 원칙 | 구현 |
 |---|------|------|
-| 1 | 단일 prompt + 자기 재투입 루프 | ralph-loop 플러그인 Stop hook |
+| 1 | 단일 prompt + 자기 재투입 루프 | js-ralph 의 goal 루프 Stop hook (`/goal` 으로 시작) |
 | 2 | 사람이 작성한 파일 spec | template/CLAUDE.md 비전 섹션 (vision-intake skill 합성 + 동결) |
-| 3 | fresh context 매 iteration | ralph-loop 기본 + CLAUDE.md 자동 로드 |
+| 3 | fresh context 매 iteration | goal 루프 기본 + CLAUDE.md 자동 로드 |
 | 4 | deterministic backpressure | template/AGENTS.md lint/typecheck/tests |
 
 ---
@@ -85,7 +86,7 @@ claude
 
 | 시점 | 내용 | 횟수 |
 |------|------|------|
-| (1회) plugin 설치 | `/plugin install ralph-loop` | 1 |
+| (1회) plugin 설치 | `/plugin install js-ralph` | 1 |
 | vision-intake (비전 인터뷰) | 8 질문 답변 | ~8 |
 | 동결 | "확정" 발화 → `onboarded: true` | 1 |
 | AGENTS.md 채우기 | 대표님 또는 ralph 첫 iteration | 0~1 |

@@ -11,7 +11,9 @@
 ## 핵심 디자인 (v3-classic, 2026-05-17 회귀)
 
 Geoffrey Huntley 의 오리지널 Ralph Wiggum 패턴 + 대표님 호칭 톤.
-**Claude Code 의 ralph-loop 플러그인 + CLAUDE.md 자동 로드** 메커니즘 활용.
+**js-ralph 내재화 goal 루프 (Stop hook) + CLAUDE.md 자동 로드** 메커니즘 활용.
+
+> v1.2.0 부터 자기 재투입 루프를 js-ralph 플러그인 안에 내재화했다 (`/goal` 커맨드 + `hooks/goal-stop-hook.sh`). 옛 외부 `ralph-loop` 플러그인 의존은 제거됨.
 
 > v3-classic 은 v2 framework (11 phase + 14 skill + 15 페르소나 + gate-verify) 를 의도적으로 폐기한 결과다. 회귀 의사결정 전문은 `HANDOFF.md`.
 
@@ -33,9 +35,9 @@ Geoffrey Huntley 의 오리지널 Ralph Wiggum 패턴 + 대표님 호칭 톤.
 
 | # | 원칙 | factory 가 박는 강제 메커니즘 |
 |---|------|--------------------------------|
-| 1 | 단일 prompt + 자기 재투입 루프 | ralph-loop 플러그인 Stop hook (사용자 설치) |
+| 1 | 단일 prompt + 자기 재투입 루프 | js-ralph 내재화 goal 루프 Stop hook (`hooks/goal-stop-hook.sh`, `/goal` 으로 시작) |
 | 2 | 사람이 작성한 파일 spec | template/CLAUDE.md 의 비전 섹션 (vision-intake skill 합성 후 동결, `onboarded: true`) |
-| 3 | fresh context 매 iteration | ralph-loop 기본 동작 + CLAUDE.md 자동 로드 |
+| 3 | fresh context 매 iteration | goal 루프 기본 동작 + CLAUDE.md 자동 로드 |
 | 4 | deterministic backpressure | template/AGENTS.md 의 lint/typecheck/tests |
 
 → LLM 채점 (gate-verify 같은 것) **없음**. 페르소나 framework **없음**.
@@ -71,10 +73,18 @@ Geoffrey Huntley 의 오리지널 Ralph Wiggum 패턴 + 대표님 호칭 톤.
 ```
 js-ralph/
   .claude-plugin/plugin.json     플러그인 manifest (name=js-ralph)
-  commands/setup-ralph.md        /setup-ralph 슬래시 entry
+  commands/
+    setup-ralph.md               /setup-ralph 슬래시 entry (하네스 박기)
+    goal.md                      /goal — goal 루프(자기 재투입) 시작
+    cancel-goal.md               /cancel-goal — 활성 goal 루프 취소
+    expand-plan.md               /expand-plan — IMPLEMENTATION_PLAN.md TODO 보강
+  hooks/
+    hooks.json                   Stop hook 등록 (컨벤션 자동 로드)
+    goal-stop-hook.sh            goal 루프 재투입 본체 (.claude/goal-loop.local.md 감지)
   scripts/
     setup-ralph.sh               하네스 박는 본체 bash
-    verify-plugin.sh             플러그인 정적 검증 (11 그룹)
+    goal-loop.sh                 goal 루프 상태파일 생성 (/goal 이 호출)
+    verify-plugin.sh             플러그인 정적 검증
   assets/template/               5파일 + 부속 (현재 디렉토리에 cp 될 원본)
     CLAUDE.md  PROMPT.md  AGENTS.md  IMPLEMENTATION_PLAN.md  README.md
     .claude/settings.json
@@ -106,6 +116,51 @@ js-ralph/
 4. **template 변경 후 `bash scripts/verify-v3-template.sh`** 로 정적 검증. [PASS] 전엔 commit 금지.
 5. **v2 → v3-classic 회귀 의사결정 전문은 `HANDOFF.md`** 에 보존됨. 새 큰 변경 시 HANDOFF.md 도 같이 갱신.
 6. **`docs/`** 안의 v2 시절 자료 (PRD, tech-design, v2-rollout-guide 등) 는 historical 로 의도적 보존. 갈아엎지 마라.
+
+---
+
+## 버전업 / 배포 워크플로 (factory 유지보수자용)
+
+> **⚠️ 절대 규칙** — 본 플러그인 코드를 변경하고 버전을 올렸으면, **반드시 대표님께 아래 갱신 시퀀스를 안내해야 한다**. 마켓플레이스 갱신 마찰은 대표님이 모르고 지나가면 새 버전이 ejected 하네스에 안 깔리므로, 안내 누락 = 사실상 배포 실패.
+
+### 1) 한 commit 으로 묶기
+
+버전 올릴 때 다음 두 파일을 **같은 commit** 에 묶는다:
+- `.claude-plugin/plugin.json` 의 `version`
+- `.claude-plugin/marketplace.json` 의 `plugins[].source.ref` + `plugins[].version`
+
+그 다음 tag → push 순서:
+
+```bash
+git add .claude-plugin/plugin.json .claude-plugin/marketplace.json <기타 변경 파일>
+git commit -m "feat(...): vX.Y.Z — ..."
+git tag -a vX.Y.Z -m "..."
+git push origin main
+git push origin vX.Y.Z
+```
+
+→ tag 가 marketplace 갱신까지 포함한 commit 을 가리켜야 ref 와 실제 코드가 sync 된다. (분리 commit + 뒤늦은 tag 는 tag 시점 ref 가 옛날 marketplace.json 을 가리켜 옵셋이 생긴다.)
+
+### 2) push 직후 대표님께 **반드시** 안내 (의무)
+
+push 가 끝나면 대표님께 아래 시퀀스를 **반드시 보고/안내한다. 생략 금지**:
+
+```
+대표님께:
+
+vX.Y.Z 배포 완료. 다른 ejected 하네스에서 적용하시려면:
+
+  /plugin marketplace update js-ralph    # 카탈로그 다시 fetch
+  /plugin update js-ralph                # 플러그인 코드 갱신
+  /reload-plugins                        # 즉시 적용
+
+확인: `/` 메뉴에 새 슬래시가 보이면 성공.
+```
+
+### 3) 왜 두 명령 다 필요한가
+- `/plugin marketplace update <marketplace-name>` — marketplace.json 캐시 갱신 (어떤 ref 가 최신인지 클라이언트가 인식)
+- `/plugin update <plugin-name>` — 그 ref 기준으로 plugin 코드 fetch
+- 둘 중 하나만 하면 옛날 카탈로그 또는 옛날 코드가 남아 새 슬래시가 안 잡힌다.
 
 ---
 

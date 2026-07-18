@@ -115,8 +115,29 @@ done
 
 # [11] FR-7 자동 시작 게이트 흔적
 echo; echo "[11] vision-intake FR-7 자동 시작 게이트"
-grep -q "ralph-loop 를 지금 자동 시작" "$sk" && pass "FR-7 게이트 문구" || fail "FR-7 게이트 문구 부재"
+grep -q "goal 루프를 지금 자동 시작" "$sk" && pass "FR-7 게이트 문구" || fail "FR-7 게이트 문구 부재"
 grep -q "Read PROMPT.md and follow it." "$sk" && pass "R-4 고정 prompt 인자" || fail "R-4 고정 prompt 인자 부재"
+grep -q "goal-loop.sh" "$sk" && pass "내부 goal-loop.sh 참조" || fail "내부 goal-loop.sh 참조 부재"
+grep -qE "setup-ralph-loop|/ralph-loop:" "$sk" && fail "옛 외부 ralph-loop 호출 잔존 (제거 필요)" || pass "외부 ralph-loop 호출 제거됨"
+
+# [12] goal 루프 내재화 (커맨드 + hook + 스크립트)
+echo; echo "[12] goal 루프 내재화 (커맨드/hook/스크립트)"
+for f in commands/goal.md commands/cancel-goal.md scripts/goal-loop.sh hooks/hooks.json hooks/goal-stop-hook.sh; do
+  [ -e "$ROOT/$f" ] && pass "$f" || fail "missing: $f"
+done
+gl="$ROOT/scripts/goal-loop.sh"; gh="$ROOT/hooks/goal-stop-hook.sh"
+[ -x "$gl" ] && pass "goal-loop.sh +x" || fail "goal-loop.sh not executable"
+[ -x "$gh" ] && pass "goal-stop-hook.sh +x" || fail "goal-stop-hook.sh not executable"
+bash -n "$gl" 2>/dev/null && pass "goal-loop.sh 문법" || fail "goal-loop.sh 문법 오류"
+bash -n "$gh" 2>/dev/null && pass "goal-stop-hook.sh 문법" || fail "goal-stop-hook.sh 문법 오류"
+jq -e '.hooks.Stop' "$ROOT/hooks/hooks.json" >/dev/null 2>&1 && pass "hooks.json Stop 등록" || fail "hooks.json Stop 미등록"
+grep -q "Goal set:" "$gl" && pass "'Goal set:' 활성 메시지" || fail "'Goal set:' 메시지 부재"
+grep -q "goal-loop.local.md" "$gh" && pass "hook 이 goal-loop.local.md 감지" || fail "hook 상태파일 경로 부재"
+
+# [13] 템플릿 settings.json — goal-loop allow-list (ralph-loop 부재)
+echo; echo "[13] 템플릿 settings.json allow-list 전환"
+grep -q "js-ralph/\*/scripts/goal-loop.sh" "$sj" && pass "goal-loop.sh allow-list" || fail "goal-loop.sh allow-list 부재"
+grep -q "ralph-loop" "$sj" && fail "옛 ralph-loop allow-list 잔존" || pass "ralph-loop allow-list 제거됨"
 
 echo
 if [ "$FAIL" -eq 0 ]; then

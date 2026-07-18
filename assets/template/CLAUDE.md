@@ -64,7 +64,7 @@ onboarded_at: null
 
 | # | 원칙 | 이 하네스에서 구현 |
 |---|------|--------------------|
-| 1 | 단일 prompt + 자기 재투입 루프 | ralph-loop 플러그인의 Stop hook 이 매 iteration 동일 prompt 를 fresh context 로 재투입 |
+| 1 | 단일 prompt + 자기 재투입 루프 | js-ralph 의 goal 루프 Stop hook 이 매 iteration 동일 prompt 를 fresh context 로 재투입 (`/goal` 으로 시작) |
 | 2 | 사람이 작성한 파일 spec | 이 CLAUDE.md 의 "비전 / 사양" 섹션 (vision-intake 합성 후 동결) + (선택) `specs/*` |
 | 3 | fresh context 매 iteration | ralph 는 앞 iteration 을 기억 X. 상태는 git + 4 파일에만 |
 | 4 | deterministic backpressure | `AGENTS.md` 의 검증 명령 (lint/typecheck/tests). LLM 채점 없음 |
@@ -73,7 +73,7 @@ onboarded_at: null
 
 ## 공통 — 매 iteration 흐름
 
-`/ralph-loop:ralph-loop` 시작 후 매 iteration ralph 가 자동 진행:
+`/goal` 시작 후 매 iteration ralph 가 자동 진행:
 
 ```
 이 CLAUDE.md (자동 로드) + PROMPT.md (Read) → §1 절차 따라:
@@ -82,7 +82,7 @@ onboarded_at: null
   → 구현
   → AGENTS.md 검증 명령 (모두 exit 0)
   → PASS 면 commit + [ ]→[x]
-  → 종료 → Stop hook 재투입
+  → 종료 → goal 루프 Stop hook 재투입
 ```
 
 종료 조건:
@@ -130,13 +130,12 @@ onboarded_at: null
 
 ## 공통 — 신규 시작 체크리스트
 
-- [ ] (1회) Claude Code 에 **ralph-loop 플러그인** 설치 — `/plugin install ralph-loop`
 - [ ] `claude` 세션 열기 — ralph 가 vision-intake skill 자동 호출 (위 `onboarded: false` 트리거)
 - [ ] 8 질문 답변 후 "확정" 발화 → 이 CLAUDE.md 의 "비전 / 사양" 자동 합성 + `onboarded: true`
 - [ ] `AGENTS.md` 의 검증 명령 채우고 로컬에서 1회 exit 0 확인
-- [ ] ralph-loop 시작:
+- [ ] goal 루프 시작 (vision-intake 동결 직후 자동 시작 게이트가 뜸. 수동은 아래):
   ```
-  /ralph-loop:ralph-loop "Read PROMPT.md and follow it." --completion-promise "PROJECT_DONE" --max-iterations 150
+  /goal "Read PROMPT.md and follow it." --completion-promise "PROJECT_DONE" --max-iterations 150
   ```
 - [ ] 첫 iteration 끝나고 `IMPLEMENTATION_PLAN.md` 에 `[ ]` 가 누적되는지 확인
 

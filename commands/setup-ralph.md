@@ -16,6 +16,6 @@ allowed-tools: ["Bash(${CLAUDE_PLUGIN_ROOT}/scripts/setup-ralph.sh:*)"]
 
 1. `vision-intake` skill 을 Skill 도구로 invoke 합니다 (사용자 별도 발화 불필요).
 2. vision-intake skill 본문의 1단계 "인사" → 2단계 "8 질문" 흐름이 자동 시작됩니다.
-3. 5단계 "동결" + 6단계 "ralph-loop 자동 시작 게이트 (FR-7)" 까지 완주합니다.
+3. 5단계 "동결" + 6단계 "goal 루프 자동 시작 게이트 (FR-7)" 까지 완주합니다.
 
 bash 가 exit != 0 (clean 모드 충돌 / overlay 비전 보호 abort / 잘못된 디렉토리 등) 이면 vision-intake invoke 하지 마시고, stderr 에 출력된 안내문 그대로 대표님께 보고하십시오.

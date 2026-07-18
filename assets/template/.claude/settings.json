@@ -51,7 +51,7 @@
       "Write(IMPLEMENTATION_PLAN.md)",
       "Edit(AGENTS.md)",
       "Write(AGENTS.md)",
-      "Bash(bash ~/.claude/plugins/cache/claude-plugins-official/ralph-loop/*/scripts/setup-ralph-loop.sh:*)"
+      "Bash(bash ~/.claude/plugins/cache/*/js-ralph/*/scripts/goal-loop.sh:*)"
     ],
     "ask": [
       "Bash(sudo:*)",

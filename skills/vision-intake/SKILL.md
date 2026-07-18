@@ -96,15 +96,17 @@ Edit 도구로 `CLAUDE.md` 의 **"비전 / 사양 (대표님 영역 — vision-i
 
 ---
 
-## 6단계 — ralph-loop 자동 시작 게이트 (FR-7)
+## 6단계 — goal 루프 자동 시작 게이트 (FR-7)
 
-**선행 체크** (R-3): ralph-loop 플러그인이 설치되어 있어야 자동 시작 가능. Bash 도구로 path 확인:
+> goal 루프는 js-ralph 플러그인 자체에 내재화돼 있다 (외부 ralph-loop 플러그인 불필요). 이 skill 을 돌리는 주체가 js-ralph 이므로 `goal-loop.sh` 는 정상적으로 존재한다.
+
+**선행 체크**: js-ralph 의 `goal-loop.sh` path 확인. Bash 도구로:
 
 ```bash
-ls ~/.claude/plugins/cache/claude-plugins-official/ralph-loop/*/scripts/setup-ralph-loop.sh 2>/dev/null | head -1
+ls ~/.claude/plugins/cache/*/js-ralph/*/scripts/goal-loop.sh 2>/dev/null | head -1
 ```
 
-- path 존재 안 함 → 대표님께 안내: "ralph-loop 플러그인 미설치입니다. 먼저 `/plugin install ralph-loop` 로 설치하신 후, 수동으로 슬래시 명령을 실행해 주십시오: `/ralph-loop:ralph-loop \"Read PROMPT.md and follow it.\" --completion-promise \"PROJECT_DONE\" --max-iterations 150`" — 게이트 스킵.
+- path 존재 안 함 (비정상) → 대표님께 안내: "자동 시작 경로를 찾지 못했습니다. 수동으로 실행해 주십시오: `/goal \"Read PROMPT.md and follow it.\" --completion-promise \"PROJECT_DONE\" --max-iterations 150`" — 게이트 스킵.
 - path 존재 → 다음 step.
 
 **max-iterations 자동 추출** (D-5): CLAUDE.md 의 `### 7. 규모·일정·비용 cap` 본문에서 첫 정수를 추출. 100~500 범위면 채택, 그 외 (또는 추출 실패) default 150.
@@ -120,7 +122,7 @@ fi
 
 ```json
 {
-  "question": "ralph-loop 를 지금 자동 시작할까요? (max-iterations: <MAX_ITER>)",
+  "question": "goal 루프를 지금 자동 시작할까요? (max-iterations: <MAX_ITER>)",
   "context": "yes → fresh context 로 매 iteration 재투입 시작. no → 수동 슬래시 명령 안내만.",
   "choices": [
     {"value": "yes", "label": "예 — 지금 자동 시작"},
@@ -129,13 +131,10 @@ fi
 }
 ```
 
-**yes 처리** (R-4: 자연어 인자 절대 박지 않음, 고정 문자열만):
+**yes 처리** (R-4: 자연어 인자 절대 박지 않음, 고정 문자열만). 먼저 위 선행 체크로 얻은 **절대 경로**를 그대로 인라인해 호출한다:
 
 ```bash
-PROMPT_FIXED="Read PROMPT.md and follow it."
-PROMISE_FIXED="PROJECT_DONE"
-SETUP_PATH=$(ls ~/.claude/plugins/cache/claude-plugins-official/ralph-loop/*/scripts/setup-ralph-loop.sh 2>/dev/null | head -1)
-bash "$SETUP_PATH" "$PROMPT_FIXED" --completion-promise "$PROMISE_FIXED" --max-iterations "$MAX_ITER"
+bash <goal-loop.sh 절대경로> "Read PROMPT.md and follow it." --completion-promise "PROJECT_DONE" --max-iterations <MAX_ITER>
 ```
 
 → Stop hook 활성. 다음 Stop 부터 `Read PROMPT.md and follow it.` 가 fresh context 로 재투입.
@@ -146,9 +145,9 @@ bash "$SETUP_PATH" "$PROMPT_FIXED" --completion-promise "$PROMISE_FIXED" --max-i
 대표님, 자동 시작 안 하셨습니다.
 수동으로 시작하시려면 아래 슬래시 명령을 입력해 주십시오:
 
-  /ralph-loop:ralph-loop "Read PROMPT.md and follow it." --completion-promise "PROJECT_DONE" --max-iterations <MAX_ITER>
+  /goal "Read PROMPT.md and follow it." --completion-promise "PROJECT_DONE" --max-iterations <MAX_ITER>
 
-중도 멈춤이 필요하시면 `/ralph-loop:cancel-ralph` 슬래시로 cancel 가능합니다.
+중도 멈춤이 필요하시면 `/cancel-goal` 슬래시로 cancel 가능합니다.
 ```
 
    첫 iteration 에서 AGENTS.md 검증 명령이 비어 있으면 AGENTS.md 채움부터 진행합니다.

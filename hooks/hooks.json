@@ -1,0 +1,15 @@
+{
+  "description": "js-ralph goal 루프 Stop hook — .claude/goal-loop.local.md 가 있으면 동일 프롬프트를 재투입 (자기 재투입 루프)",
+  "hooks": {
+    "Stop": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bash \"${CLAUDE_PLUGIN_ROOT}/hooks/goal-stop-hook.sh\""
+          }
+        ]
+      }
+    ]
+  }
+}

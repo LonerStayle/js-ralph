@@ -5,17 +5,11 @@ Geoffrey Huntley 의 오리지널 Ralph Wiggum 패턴 + 대표님 호칭 톤.
 
 ---
 
-## 사전 조건 (1회 설치)
+## 사전 조건
 
-Claude Code 의 **ralph-loop 플러그인** 이 활성화돼 있어야 합니다.
+goal 루프(`/goal` 커맨드 + 자기 재투입 Stop hook)는 **js-ralph 플러그인**에 내재화돼 있습니다. 이 하네스를 만든 js-ralph 플러그인이 Claude Code 에 설치돼 있으면 별도 설치가 필요 없습니다. (옛 버전의 외부 `ralph-loop` 플러그인은 더 이상 필요하지 않습니다.)
 
-```bash
-# Claude Code 안에서 한 번:
-/plugin install ralph-loop
-# 또는 plugin marketplace 카탈로그에서 'ralph-loop' 선택
-```
-
-설치 확인: `/help` → ralph-loop 의 슬래시 커맨드들이 보여야 합니다.
+설치 확인: `/help` 또는 `/` 메뉴에 `/goal` 이 보여야 합니다.
 
 ---
 
@@ -52,15 +46,17 @@ ralph 가 `CLAUDE.md` 의 `onboarded: false` 를 감지하고 `vision-intake` sk
 
 `AGENTS.md` 에 lint / typecheck / tests 명령을 도메인에 맞게 채우고 로컬에서 1회 돌려 모두 exit 0 인지 확인하세요. 이게 ralph 의 backpressure 입니다.
 
-### 4) ralph-loop 시작
+### 4) goal 루프 시작
+
+vision-intake 동결("확정") 직후 자동 시작 게이트가 뜹니다. 수동으로 시작하려면:
 
 ```
-/ralph-loop:ralph-loop "Read PROMPT.md and follow it." --completion-promise "PROJECT_DONE" --max-iterations 150
+/goal "Read PROMPT.md and follow it." --completion-promise "PROJECT_DONE" --max-iterations 150
 ```
 
 - 매 iteration ralph 가 fresh context 로 `CLAUDE.md` (자동 로드) + `PROMPT.md` (명령에 의해 Read) 를 입력으로 받습니다
 - PROMPT.md §1 절차 따라 `specs/`, `AGENTS.md`, `IMPLEMENTATION_PLAN.md` 읽고 한 task 진행 → 검증 → commit → 종료
-- Stop hook 이 동일 prompt 재투입
+- goal 루프 Stop hook 이 동일 prompt 재투입 (중단은 `/cancel-goal`)
 
 ### 5) PROJECT_DONE 검토 (마지막 1회)
 
@@ -98,9 +94,9 @@ ralph 가 `PROJECT_DONE` 를 출력하고 종료하면 결과물을 직접 검�
 
 | 원칙 | 구현 |
 |------|------|
-| 1. 단일 prompt 자기 재투입 | ralph-loop 플러그인 (Stop hook) |
+| 1. 단일 prompt 자기 재투입 | js-ralph 의 goal 루프 Stop hook (`/goal` 으로 시작) |
 | 2. 사람이 작성한 spec | `CLAUDE.md` 의 비전/사양 섹션 + (선택) `specs/*` |
-| 3. fresh context 매 iteration | ralph-loop 기본 동작 + CLAUDE.md 자동 로드 |
+| 3. fresh context 매 iteration | goal 루프 기본 동작 + CLAUDE.md 자동 로드 |
 | 4. deterministic backpressure | `AGENTS.md` 의 lint/typecheck/tests |
 
 ---

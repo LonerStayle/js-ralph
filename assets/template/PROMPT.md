@@ -19,7 +19,7 @@
 7. AGENTS.md 의 "필수 검증 명령" 을 모두 실행해서 PASS 확인
 8. PASS 면 → git commit + IMPLEMENTATION_PLAN.md 의 해당 [ ]→[x] 토글
    FAIL 면 → 코드 되돌리거나 수정해서 다시 7 (commit 금지)
-9. 종료. (ralph-loop 가 즉시 다음 iteration 재투입)
+9. 종료. (goal 루프가 즉시 다음 iteration 재투입)
 ```
 
 ---

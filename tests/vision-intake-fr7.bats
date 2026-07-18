@@ -1,7 +1,7 @@
 #!/usr/bin/env bats
 
 @test "FR-7 gate phrase exists" {
-  run grep 'ralph-loop 를 지금 자동 시작할까요' skills/vision-intake/SKILL.md
+  run grep 'goal 루프를 지금 자동 시작할까요' skills/vision-intake/SKILL.md
   [ "$status" -eq 0 ]
 }
 
@@ -15,12 +15,17 @@
   [ "$status" -eq 0 ]
 }
 
-@test "D-6 ralph-loop path precheck guide" {
-  run grep '플러그인 미설치' skills/vision-intake/SKILL.md
+@test "internal goal-loop.sh precheck path" {
+  run grep 'js-ralph/\*/scripts/goal-loop.sh' skills/vision-intake/SKILL.md
   [ "$status" -eq 0 ]
 }
 
+@test "no external ralph-loop invocation" {
+  run grep -E 'setup-ralph-loop|/ralph-loop:' skills/vision-intake/SKILL.md
+  [ "$status" -ne 0 ]
+}
+
 @test "D-5 max-iterations extract logic" {
-  run grep -E 'max-iterations.*(150|cap|추출)' skills/vision-intake/SKILL.md
+  run grep -E 'max-iterations.*(150|cap|추출)|MAX_ITER' skills/vision-intake/SKILL.md
   [ "$status" -eq 0 ]
 }

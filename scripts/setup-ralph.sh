@@ -137,5 +137,5 @@ echo
 echo "다음 단계:"
 echo "  1. vision-intake skill 자동 트리거됨 (이 슬래시 본문이 즉시 invoke)"
 echo "  2. 8 질문 답변 → '확정' 발화 → CLAUDE.md 의 onboarded:true 동결"
-echo "  3. vision-intake 가 FR-7 자동 시작 게이트 띄움 (ralph-loop 자동 / 수동 선택)"
+echo "  3. vision-intake 가 FR-7 자동 시작 게이트 띄움 (goal 루프 자동 / 수동 선택)"
 echo
