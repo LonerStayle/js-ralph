@@ -1,149 +1,113 @@
 #!/usr/bin/env bash
-# js-ralph 플러그인 정적 검증 — 11 검증 그룹 (tech-design §7.3)
+# js-ralph 플러그인 정적 검증 (v2 — 롱러닝 하네스)
 
 set -uo pipefail
 
 ROOT="$(cd "$(dirname "$0")/.." && pwd)"
+T="$ROOT/assets/template"
 FAIL=0
 pass() { echo "  [ok] $*"; }
 fail() { echo "  [FAIL] $*" >&2; FAIL=$((FAIL+1)); }
+need() { [ -e "$ROOT/$1" ] && pass "$1" || fail "missing: $1"; }
 
 echo "=== js-ralph plugin verify ==="
-echo "root: $ROOT"
 
-# [1] manifest
-echo; echo "[1] .claude-plugin/plugin.json"
-mf="$ROOT/.claude-plugin/plugin.json"
-if [ -f "$mf" ]; then
-  pass "manifest exists"
-  name=$(jq -r .name "$mf" 2>/dev/null)
-  [ "$name" = "js-ralph" ] && pass "name=js-ralph" || fail "name='$name' (expected js-ralph)"
-  ver=$(jq -r .version "$mf" 2>/dev/null)
-  [[ "$ver" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]] && pass "version=$ver (semver)" || fail "version='$ver' not semver"
+echo; echo "[1] manifest"
+mf="$ROOT/.claude-plugin/plugin.json"; mk="$ROOT/.claude-plugin/marketplace.json"
+[ "$(jq -r .name "$mf")" = "js-ralph" ] && pass "name=js-ralph" || fail "plugin name"
+ver=$(jq -r .version "$mf")
+[[ "$ver" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]] && pass "version=$ver" || fail "version '$ver' not semver"
+[ "$(jq -r '.plugins[0].version' "$mk")" = "$ver" ] && pass "marketplace version sync" || fail "marketplace version != $ver"
+[ "$(jq -r '.plugins[0].source.ref' "$mk")" = "v$ver" ] && pass "marketplace ref=v$ver" || fail "marketplace ref != v$ver"
+
+echo; echo "[2] commands"
+for c in setup-harness feature resume pause status; do
+  f="commands/$c.md"; need "$f"
+  grep -q '^description:' "$ROOT/$f" 2>/dev/null || fail "$f: description frontmatter"
+done
+
+echo; echo "[3] agents"
+for a in planner builder reviewer curator; do
+  f="agents/$a.md"; need "$f"
+  grep -qE "^name:[[:space:]]*$a[[:space:]]*$" "$ROOT/$f" 2>/dev/null || fail "$f: name frontmatter"
+  grep -q '^description:' "$ROOT/$f" 2>/dev/null || fail "$f: description frontmatter"
+  grep -q '^tools:' "$ROOT/$f" 2>/dev/null || fail "$f: tools frontmatter"
+done
+# reviewer 는 읽기 전용이어야 함 (판정자가 코드를 고치면 안 됨)
+grep -E '^tools:' "$ROOT/agents/reviewer.md" | grep -qE 'Write|Edit' && fail "reviewer 에 Write/Edit 권한" || pass "reviewer read-only"
+
+echo; echo "[4] skills"
+for s in vision-intake feature-orchestration; do
+  f="skills/$s/SKILL.md"; need "$f"
+  grep -qE "^name:[[:space:]]*$s[[:space:]]*$" "$ROOT/$f" 2>/dev/null || fail "$f: name frontmatter"
+done
+
+echo; echo "[5] hooks"
+need hooks/hooks.json
+for ev in SessionStart Stop PreToolUse; do
+  jq -e ".hooks.$ev" "$ROOT/hooks/hooks.json" >/dev/null 2>&1 && pass "hooks.json $ev" || fail "hooks.json $ev 미등록"
+done
+for h in session-context stop-guard protect-files; do
+  f="$ROOT/hooks/$h.sh"
+  [ -x "$f" ] && pass "$h.sh +x" || fail "$h.sh not executable"
+  bash -n "$f" 2>/dev/null || fail "$h.sh 문법 오류"
+done
+
+echo; echo "[6] scripts"
+for s in setup-harness.sh verify-plugin.sh; do
+  f="$ROOT/scripts/$s"
+  [ -x "$f" ] && pass "$s +x" || fail "$s not executable"
+  bash -n "$f" 2>/dev/null || fail "$s 문법 오류"
+done
+grep -q 'set -euo pipefail' "$ROOT/scripts/setup-harness.sh" && pass "setup-harness strict mode" || fail "setup-harness: set -euo pipefail"
+
+echo; echo "[7] template"
+for f in CLAUDE.md README.md VERSION .gitignore .claude/settings.json .claude/skills/.gitkeep \
+         .harness/verify.sh .harness/bin/harness.sh .harness/memory/MEMORY.md \
+         .harness/features/.gitkeep .harness/verify.d/.gitkeep; do
+  [ -e "$T/$f" ] && pass "$f" || fail "missing: assets/template/$f"
+done
+[ "$(tr -d '[:space:]' < "$T/VERSION")" = "4" ] && pass "VERSION=4" || fail "VERSION != 4"
+for f in .harness/verify.sh .harness/bin/harness.sh; do
+  [ -x "$T/$f" ] && pass "$f +x" || fail "$f not executable"
+  bash -n "$T/$f" 2>/dev/null || fail "$f 문법 오류"
+done
+jq -e . "$T/.claude/settings.json" >/dev/null 2>&1 && pass "settings.json valid JSON" || fail "settings.json invalid"
+jq -e '.hooks' "$T/.claude/settings.json" >/dev/null 2>&1 && fail "template settings 에 hooks (플러그인 hooks 와 중복)" || pass "template settings: no hooks"
+jq -e '.autoMemoryEnabled == true' "$T/.claude/settings.json" >/dev/null 2>&1 && pass "autoMemoryEnabled" || fail "autoMemoryEnabled != true"
+
+echo; echo "[8] CLAUDE.md 게이팅 · 메모리 import"
+ct="$T/CLAUDE.md"
+grep -qE '^onboarded:[[:space:]]*false' "$ct" && pass "onboarded: false" || fail "onboarded: false 부재"
+[ "$(grep -cE '^### [1-8]\.' "$ct")" = "8" ] && pass "비전 8 항목" || fail "비전 항목 수 != 8"
+grep -q '^@.harness/memory/MEMORY.md' "$ct" && pass "MEMORY.md import" || fail "MEMORY.md import 부재"
+
+echo; echo "[9] 호칭 — 대표님은 CLAUDE.md/README/vision-intake 에만"
+for f in assets/template/CLAUDE.md assets/template/README.md skills/vision-intake/SKILL.md; do
+  grep -q "대표님" "$ROOT/$f" && pass "대표님 in $f" || fail "대표님 missing in $f"
+done
+for f in agents/*.md skills/feature-orchestration/SKILL.md assets/template/.harness/verify.sh \
+         assets/template/.harness/bin/harness.sh assets/template/.harness/memory/MEMORY.md; do
+  grep -q "대표님" "$ROOT"/$f 2>/dev/null && fail "대표님 leaked into $f" || pass "tool-neutral: $f"
+done
+
+echo; echo "[10] 옛 루프 방식 잔재 부재"
+for p in commands/goal.md commands/cancel-goal.md commands/expand-plan.md commands/setup-ralph.md \
+         hooks/goal-stop-hook.sh scripts/goal-loop.sh scripts/setup-ralph.sh \
+         assets/template/PROMPT.md assets/template/AGENTS.md assets/template/IMPLEMENTATION_PLAN.md; do
+  [ -e "$ROOT/$p" ] && fail "still present: $p" || pass "absent: $p"
+done
+if grep -rnE 'goal-loop|PROMPT\.md|IMPLEMENTATION_PLAN|completion-promise|PROJECT_DONE' \
+     "$ROOT/commands" "$ROOT/agents" "$ROOT/skills" "$ROOT/hooks" "$T" >/dev/null 2>&1; then
+  fail "옛 루프 용어 잔존: $(grep -rlE 'goal-loop|PROMPT\.md|IMPLEMENTATION_PLAN|completion-promise|PROJECT_DONE' "$ROOT/commands" "$ROOT/agents" "$ROOT/skills" "$ROOT/hooks" "$T" | tr '\n' ' ')"
 else
-  fail "manifest 부재: $mf"
+  pass "옛 루프 용어 없음"
 fi
-
-# [2] commands/setup-ralph.md
-echo; echo "[2] commands/setup-ralph.md"
-cmd="$ROOT/commands/setup-ralph.md"
-if [ -f "$cmd" ]; then
-  pass "exists"
-  for key in description argument-hint allowed-tools; do
-    grep -q "^${key}:" "$cmd" && pass "frontmatter $key" || fail "missing frontmatter: $key"
-  done
-else
-  fail "missing: $cmd"
-fi
-
-# [3] scripts/setup-ralph.sh
-echo; echo "[3] scripts/setup-ralph.sh"
-ssh="$ROOT/scripts/setup-ralph.sh"
-if [ -f "$ssh" ]; then
-  pass "exists"
-  [ -x "$ssh" ] && pass "chmod +x" || fail "not executable"
-  head -1 "$ssh" | grep -q '^#!/usr/bin/env bash' && pass "bash shebang" || fail "missing bash shebang"
-  grep -q 'set -euo pipefail' "$ssh" && pass "set -euo pipefail" || fail "missing set -euo pipefail"
-else
-  fail "missing: $ssh"
-fi
-
-# [4] assets/template/
-echo; echo "[4] assets/template/ 5파일 + 부속"
-for f in CLAUDE.md PROMPT.md AGENTS.md IMPLEMENTATION_PLAN.md README.md \
-         .claude/settings.json .gitignore VERSION specs/.gitkeep; do
-  [ -e "$ROOT/assets/template/$f" ] && pass "$f" || fail "missing: assets/template/$f"
-done
-v=$(tr -d '[:space:]' < "$ROOT/assets/template/VERSION" 2>/dev/null || echo)
-[ "$v" = "3" ] && pass "VERSION=3" || fail "VERSION='$v' (expected 3)"
-
-# [5] skills/vision-intake/SKILL.md
-echo; echo "[5] skills/vision-intake/SKILL.md"
-sk="$ROOT/skills/vision-intake/SKILL.md"
-if [ -f "$sk" ]; then
-  pass "exists"
-  grep -qE "^name:[[:space:]]*vision-intake[[:space:]]*$" "$sk" \
-    && pass "frontmatter name=vision-intake" \
-    || fail "frontmatter name mismatch"
-else
-  fail "missing: $sk"
-fi
-
-# [6] 도구 중립
-echo; echo "[6] PROMPT/AGENTS/PLAN 도구 중립 (대표님 부재)"
-for f in PROMPT.md AGENTS.md IMPLEMENTATION_PLAN.md; do
-  if grep -q "대표님" "$ROOT/assets/template/$f" 2>/dev/null; then
-    fail "대표님 leaked into $f"
-  else
-    pass "tool-neutral: $f"
-  fi
-done
-
-# [7] 호칭 본거지
-echo; echo "[7] 호칭 본거지 (대표님 존재)"
-for f in "assets/template/CLAUDE.md" "assets/template/README.md" "skills/vision-intake/SKILL.md"; do
-  if grep -q "대표님" "$ROOT/$f" 2>/dev/null; then
-    pass "대표님 in $f"
-  else
-    fail "대표님 missing in $f"
-  fi
-done
-
-# [8] CLAUDE.md gating + placeholder
-echo; echo "[8] assets/template/CLAUDE.md gating + placeholder"
-ct="$ROOT/assets/template/CLAUDE.md"
-grep -q "^onboarded:" "$ct" && pass "onboarded: 키" || fail "missing onboarded:"
-n=$(grep -cE "^### [1-8]\." "$ct" || true)
-[ "$n" = "8" ] && pass "placeholder = 8" || fail "placeholder = $n (expected 8)"
-grep -q "미입력" "$ct" && pass "'미입력' 마커" || fail "missing '미입력'"
-
-# [9] settings.json
-echo; echo "[9] settings.json — hooks 부재 + Edit(CLAUDE.md)"
-sj="$ROOT/assets/template/.claude/settings.json"
-grep -q '"hooks"' "$sj" && fail "hooks 존재 (제거 필요)" || pass "no hooks"
-grep -q '"Edit(CLAUDE.md)"' "$sj" && pass "Edit(CLAUDE.md) 허용" || fail "missing Edit(CLAUDE.md)"
-
-# [10] 옛 잔재 부재
-echo; echo "[10] 옛 잔재 부재 (factory 정리, FR-6)"
-for p in "template" "scripts/new-harness.sh" "scripts/verify-v3-template.sh"; do
-  if [ -e "$ROOT/$p" ]; then
-    fail "still present: $p (제거 필요)"
-  else
-    pass "absent: $p"
-  fi
-done
-
-# [11] FR-7 자동 시작 게이트 흔적
-echo; echo "[11] vision-intake FR-7 자동 시작 게이트"
-grep -q "goal 루프를 지금 자동 시작" "$sk" && pass "FR-7 게이트 문구" || fail "FR-7 게이트 문구 부재"
-grep -q "Read PROMPT.md and follow it." "$sk" && pass "R-4 고정 prompt 인자" || fail "R-4 고정 prompt 인자 부재"
-grep -q "goal-loop.sh" "$sk" && pass "내부 goal-loop.sh 참조" || fail "내부 goal-loop.sh 참조 부재"
-grep -qE "setup-ralph-loop|/ralph-loop:" "$sk" && fail "옛 외부 ralph-loop 호출 잔존 (제거 필요)" || pass "외부 ralph-loop 호출 제거됨"
-
-# [12] goal 루프 내재화 (커맨드 + hook + 스크립트)
-echo; echo "[12] goal 루프 내재화 (커맨드/hook/스크립트)"
-for f in commands/goal.md commands/cancel-goal.md scripts/goal-loop.sh hooks/hooks.json hooks/goal-stop-hook.sh; do
-  [ -e "$ROOT/$f" ] && pass "$f" || fail "missing: $f"
-done
-gl="$ROOT/scripts/goal-loop.sh"; gh="$ROOT/hooks/goal-stop-hook.sh"
-[ -x "$gl" ] && pass "goal-loop.sh +x" || fail "goal-loop.sh not executable"
-[ -x "$gh" ] && pass "goal-stop-hook.sh +x" || fail "goal-stop-hook.sh not executable"
-bash -n "$gl" 2>/dev/null && pass "goal-loop.sh 문법" || fail "goal-loop.sh 문법 오류"
-bash -n "$gh" 2>/dev/null && pass "goal-stop-hook.sh 문법" || fail "goal-stop-hook.sh 문법 오류"
-jq -e '.hooks.Stop' "$ROOT/hooks/hooks.json" >/dev/null 2>&1 && pass "hooks.json Stop 등록" || fail "hooks.json Stop 미등록"
-grep -q "Goal set:" "$gl" && pass "'Goal set:' 활성 메시지" || fail "'Goal set:' 메시지 부재"
-grep -q "goal-loop.local.md" "$gh" && pass "hook 이 goal-loop.local.md 감지" || fail "hook 상태파일 경로 부재"
-
-# [13] 템플릿 settings.json — goal-loop allow-list (ralph-loop 부재)
-echo; echo "[13] 템플릿 settings.json allow-list 전환"
-grep -q "js-ralph/\*/scripts/goal-loop.sh" "$sj" && pass "goal-loop.sh allow-list" || fail "goal-loop.sh allow-list 부재"
-grep -q "ralph-loop" "$sj" && fail "옛 ralph-loop allow-list 잔존" || pass "ralph-loop allow-list 제거됨"
 
 echo
 if [ "$FAIL" -eq 0 ]; then
   echo "[PASS] js-ralph plugin verify ok"
   exit 0
-else
-  echo "[FAIL] $FAIL check(s) failed"
-  exit 1
 fi
+echo "[FAIL] $FAIL check(s) failed"
+exit 1

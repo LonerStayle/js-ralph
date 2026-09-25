@@ -5,27 +5,27 @@ description: 대표님 첫 진입 시 인사 → 8 질문 비전 인터뷰 → C
 
 # vision-intake
 
-> v2 의 `master-spec` / `manifest` / `chunks` framework 는 폐기.
-> v3-classic 정밀화: vision 은 별도 파일(`specs/vision*` 등)이 아니라 **이 하네스의 CLAUDE.md 안에 직접** 합성한다 (Claude Code 자동 로드 활용).
+> vision 은 별도 파일이 아니라 **하네스의 CLAUDE.md 안에 직접** 합성한다 (Claude Code 자동 로드 활용).
+> 기능 단위 사양은 여기서 만들지 않는다 — 기획마다 planner 가 `.harness/features/<slug>/SPEC.md` 를 만든다.
 
 ---
 
 ## 트리거 조건
 
-ralph 가 매 iteration 진입 시 `CLAUDE.md` 를 자동 로드한다. 그 안 frontmatter 또는 `## 🔒 비전 인터뷰 상태` 섹션의 `onboarded` 값을 확인:
+Claude Code 가 매 세션 `CLAUDE.md` 를 자동 로드하고, SessionStart hook 이 미완료 인터뷰를 알린다. CLAUDE.md frontmatter 또는 `## 🔒 비전 인터뷰 상태` 섹션의 `onboarded` 값을 확인:
 
 - `onboarded: false` 또는 부재 → 이 skill 호출 (인터뷰 시작)
-- `onboarded: true` → 이 skill 호출하지 않음. PROMPT.md 의 매 iteration 절차로 직접 진입
+- `onboarded: true` → 이 skill 호출하지 않음. 기획은 `/js-ralph:feature` 로 받는다
 
 ---
 
 ## 1단계 — 인사
 
 ```
-대표님 안녕하십니까. ralph 입니다.
+대표님 안녕하십니까.
 프로젝트를 시작하기 전에 8가지 질문을 드리겠습니다.
 답변 후 CLAUDE.md 의 "비전 / 사양" 섹션을 자동으로 채워드리겠습니다.
-검토하시고 "확정" 발화 주시면 동결하고 자율 루프로 진입합니다.
+검토하시고 "확정" 발화 주시면 동결하고 첫 기획을 받을 준비를 하겠습니다.
 ```
 
 ---
@@ -59,6 +59,9 @@ ralph 가 매 iteration 진입 시 `CLAUDE.md` 를 자동 로드한다. 그 안 
 
 ## 4단계 — CLAUDE.md 합성
 
+> 기존 프로젝트에 `--overlay` 로 설치했다면 `CLAUDE.md.pre-harness` 가 있을 수 있다. 있으면 먼저 읽고,
+> 거기 적힌 프로젝트 사실(스택 · 컨벤션 · 명령)은 인터뷰 질문을 줄이는 데 쓰고, 합성 시 반영한다.
+
 Edit 도구로 `CLAUDE.md` 의 **"비전 / 사양 (대표님 영역 — vision-intake 가 채움)"** 섹션 아래 8개 `### N. ...` 자리의 `*(미입력...)*` 텍스트를 답변으로 갈아끼운다.
 
 **손대지 않을 영역**:
@@ -71,7 +74,7 @@ Edit 도구로 `CLAUDE.md` 의 **"비전 / 사양 (대표님 영역 — vision-i
 대표님, CLAUDE.md 의 "비전 / 사양" 8 항목을 채워 두었습니다.
 검토 부탁드립니다.
 수정 사항이 있으시면 말씀해 주시고,
-괜찮으시면 "확정" / "OK" / "진행해" 중 하나로 발화 주시면 동결하고 자율 루프로 진입하겠습니다.
+괜찮으시면 "확정" / "OK" / "진행해" 중 하나로 발화 주시면 동결하겠습니다.
 ```
 
 ---
@@ -83,6 +86,9 @@ Edit 도구로 `CLAUDE.md` 의 **"비전 / 사양 (대표님 영역 — vision-i
 - `확정`, `OK`, `ok`, `진행해`, `동결`, `frozen`
 
 ### 동결 실행 절차
+
+> ⚠️ `onboarded: true` 로 바뀌는 순간부터 CLAUDE.md 는 에이전트가 수정할 수 없다 (PreToolUse hook 이 차단).
+> 비전 8 항목 수정은 **반드시 동결 전에** 끝낸다. 동결은 항상 마지막 Edit 이다.
 
 1. Edit 도구로 `CLAUDE.md` 의 `## 🔒 비전 인터뷰 상태` 섹션 yaml 블록 갱신:
    ```yaml
@@ -96,68 +102,39 @@ Edit 도구로 `CLAUDE.md` 의 **"비전 / 사양 (대표님 영역 — vision-i
 
 ---
 
-## 6단계 — goal 루프 자동 시작 게이트 (FR-7)
+## 6단계 — 첫 기획 게이트
 
-> goal 루프는 js-ralph 플러그인 자체에 내재화돼 있다 (외부 ralph-loop 플러그인 불필요). 이 skill 을 돌리는 주체가 js-ralph 이므로 `goal-loop.sh` 는 정상적으로 존재한다.
-
-**선행 체크**: js-ralph 의 `goal-loop.sh` path 확인. Bash 도구로:
-
-```bash
-ls ~/.claude/plugins/cache/*/js-ralph/*/scripts/goal-loop.sh 2>/dev/null | head -1
-```
-
-- path 존재 안 함 (비정상) → 대표님께 안내: "자동 시작 경로를 찾지 못했습니다. 수동으로 실행해 주십시오: `/goal \"Read PROMPT.md and follow it.\" --completion-promise \"PROJECT_DONE\" --max-iterations 150`" — 게이트 스킵.
-- path 존재 → 다음 step.
-
-**max-iterations 자동 추출** (D-5): CLAUDE.md 의 `### 7. 규모·일정·비용 cap` 본문에서 첫 정수를 추출. 100~500 범위면 채택, 그 외 (또는 추출 실패) default 150.
-
-```bash
-MAX_ITER=$(awk '/^### 7\./{flag=1; next} /^### /{flag=0} flag' CLAUDE.md | grep -oE '[0-9]+' | head -1)
-if [ -z "$MAX_ITER" ] || [ "$MAX_ITER" -lt 100 ] || [ "$MAX_ITER" -gt 500 ]; then
-  MAX_ITER=150
-fi
-```
-
-**게이트 발화** (AskUserQuestion 도구):
+동결 직후 AskUserQuestion 도구로 묻는다:
 
 ```json
 {
-  "question": "goal 루프를 지금 자동 시작할까요? (max-iterations: <MAX_ITER>)",
-  "context": "yes → fresh context 로 매 iteration 재투입 시작. no → 수동 슬래시 명령 안내만.",
-  "choices": [
-    {"value": "yes", "label": "예 — 지금 자동 시작"},
-    {"value": "no", "label": "아니오 — 나중에 수동 실행"}
-  ]
+  "question": "첫 기획을 지금 넣으시겠습니까?",
+  "header": "첫 기획",
+  "options": [
+    {"label": "지금 입력", "description": "기능 하나를 자유롭게 설명하시면 계획 → 구현 → 보고까지 무인으로 진행합니다."},
+    {"label": "나중에", "description": "/js-ralph:feature <기획> 으로 언제든 시작할 수 있습니다."}
+  ],
+  "multiSelect": false
 }
 ```
 
-**yes 처리** (R-4: 자연어 인자 절대 박지 않음, 고정 문자열만). 먼저 위 선행 체크로 얻은 **절대 경로**를 그대로 인라인해 호출한다:
-
-```bash
-bash <goal-loop.sh 절대경로> "Read PROMPT.md and follow it." --completion-promise "PROJECT_DONE" --max-iterations <MAX_ITER>
-```
-
-→ Stop hook 활성. 다음 Stop 부터 `Read PROMPT.md and follow it.` 가 fresh context 로 재투입.
-
-**no 처리**: 안내문만 노출:
+- **지금 입력** → 대표님이 기획을 적어 주시면 `feature-orchestration` 스킬을 불러 그 기획으로 **Phase A 부터** 진행한다.
+  기획이 비전의 "5. 금지 / 범위 밖" 과 충돌하면 진행하지 말고 사유를 말씀드린다.
+- **나중에** → 안내만 한다:
 
 ```
-대표님, 자동 시작 안 하셨습니다.
-수동으로 시작하시려면 아래 슬래시 명령을 입력해 주십시오:
+대표님, 준비가 끝났습니다.
+기획 한 건을 아래처럼 넣어 주시면 영향 분석부터 구현 · 검증 · 보고까지 끝까지 진행합니다.
 
-  /goal "Read PROMPT.md and follow it." --completion-promise "PROJECT_DONE" --max-iterations <MAX_ITER>
+  /js-ralph:feature 회원가입에 이메일 인증 추가. 인증 메일 10분 만료, 재발송 1분 쿨다운.
 
-중도 멈춤이 필요하시면 `/cancel-goal` 슬래시로 cancel 가능합니다.
+진행 중 확인은 /js-ralph:status, 정지는 /js-ralph:pause 입니다.
 ```
-
-   첫 iteration 에서 AGENTS.md 검증 명령이 비어 있으면 AGENTS.md 채움부터 진행합니다.
-   ```
 
 ---
 
 ## 주의
 
 - 이 skill 은 **1회성**이다. `onboarded: true` 이후 다시 호출되면 "이미 onboarded 된 CLAUDE.md 가 있습니다" 만 출력하고 종료.
-- 재인터뷰가 필요하면 대표님이 `CLAUDE.md` 의 `onboarded` 를 `false` 로 직접 토글 후 세션 재시작.
-- `specs/*` 파일은 vision-intake 가 생성하지 않는다. 도메인 추가 사양 (api/ui/data 등) 이 필요하면 대표님이 동결 후 직접 추가하거나, ralph 가 첫 iteration 에서 비전 기준으로 초안 제안 가능.
-- 별도 vision 파일 (예: `specs/vision*`, `master-spec*`) 또는 `manifest*` / `chunks/` / `cycles/` 는 생성하지 마라. vision 은 CLAUDE.md 가 단일 출처다.
+- 재인터뷰가 필요하면 대표님이 에디터에서 `CLAUDE.md` 의 `onboarded` 를 `false` 로 직접 바꾼 뒤 세션을 재시작한다 (에이전트는 동결된 CLAUDE.md 를 고칠 수 없다).
+- 별도 vision 파일 (예: `specs/vision*`, `master-spec*`) 은 만들지 마라. 비전은 CLAUDE.md 가 단일 출처이고, 기능 사양은 기획마다 `.harness/features/<slug>/SPEC.md` 에 생긴다.

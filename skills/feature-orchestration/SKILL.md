@@ -1,0 +1,102 @@
+---
+name: feature-orchestration
+description: 하네스 프로젝트(.harness/ 존재)에서 기획 한 건을 계획 → 바텀업 구현 → 마감까지 무인으로 끝까지 진행하는 오케스트레이터 절차. /feature · /resume 에서 호출되고, run.json 이 running 인 세션이 재개·압축된 뒤에도 이 절차로 이어간다.
+user-invocable: false
+---
+
+# feature-orchestration
+
+너는 오케스트레이터다. **직접 구현하지 않는다** — 계획은 planner, 구현은 builder, 검토는 reviewer, 교훈은 curator
+서브에이전트에게 맡기고(플러그인 에이전트라 `js-ralph:planner` 처럼 보일 수 있다), 너는 상태를 전이시키고 결과를 확인한다.
+이렇게 해야 네 컨텍스트가 작게 유지되어 수 시간짜리 실행을 버틴다.
+
+**상태의 단일 출처는 파일이다**: `SPEC.md` · `TREE.md` · `.harness/run.json` · git 로그.
+기억에 의존하지 말고, 헷갈리면 `bash .harness/bin/harness.sh status` 를 본다.
+노드/실행 상태는 반드시 `harness.sh` 로만 바꾼다 (run.json 직접 수정은 hook 이 막는다).
+
+---
+
+## Phase A — 계획 (기획이 새로 들어왔을 때만)
+
+1. **slug 결정**: 기획을 요약한 영문 kebab-case (`email-verification`). `.harness/features/<slug>/` 가 이미 있으면 뒤에 `-2` 등.
+2. `mkdir -p .harness/features/<slug>` 후 **planner** 호출 — 기획 원문 전체와 디렉토리 경로를 넘긴다.
+3. **reviewer (mode: plan)** 호출. high/medium 발견이 있으면 planner 에게 발견 목록을 넘겨 SPEC/TREE 를 보강시킨다. 최대 2 라운드.
+4. 게이트 — 둘 다 통과해야 착수:
+   ```bash
+   HARNESS_FEATURE=<slug> bash .harness/bin/harness.sh coverage   # uncovered 0
+   HARNESS_FEATURE=<slug> bash .harness/bin/harness.sh next        # READY … 이어야 함
+   ```
+5. 커밋: `git add .harness/features/<slug> && git commit -m "plan(<slug>): SPEC + TREE (<노드 수> nodes)"`
+6. 실행 시작: `bash .harness/bin/harness.sh start <slug>` — 이 순간부터 Stop hook 이 중간 종료를 막는다.
+7. 사용자에게 계획 요약을 짧게 보고한다 (노드 수, 핵심 사이드이펙트, 내린 가정). **승인을 기다리지 않고** Phase B 로 간다.
+
+---
+
+## Phase B — 바텀업 구현 루프
+
+반복한다:
+
+```bash
+bash .harness/bin/harness.sh next
+```
+
+- `READY <id> …` → 아래 **노드 처리**
+- `DONE` → Phase C
+- `BLOCKED` / `STUCK` → Phase C 의 부분 마감 (차단 사유 보고)
+
+### 노드 처리
+
+1. `bash .harness/bin/harness.sh set <id> doing`
+2. **builder** 호출 — 노드 ID, feature 경로, (재시도면) 직전 실패 요약.
+3. builder 보고를 믿지 말고 **직접 검증한다**: `bash .harness/verify.sh` 가 exit 0 인지, `git log -1` 에 노드 커밋이 있는지 확인.
+4. **reviewer (mode: node)** 호출 — 노드 ID 와 커밋 범위. 발견 처리:
+   - high → 같은 노드를 builder 로 다시 돌려 고친다 (재시도 1회로 셈).
+   - medium → SPEC.md 예외 카탈로그에 새 `E-` 항목으로 추가하고, TREE.md 에서 이 노드의 부모 아래 **새 노드로 추가**해 `covers:` 에 매핑한다. 트리는 이렇게 자란다.
+   - low → REPORT 후보로만 적어둔다.
+5. 검증 PASS + high 발견 없음 → `bash .harness/bin/harness.sh set <id> done`
+6. 실패 처리 (builder FAIL 또는 high 재시도 후에도 실패):
+   - 이 노드의 누적 시도가 **3회 미만** → 실패 요약을 붙여 builder 재호출.
+   - **3회 도달** → planner 를 재계획 모드로 호출해 노드를 더 작은 자식으로 쪼갠다 (노드는 `todo` 로 되돌림). 노드당 재계획은 1번.
+   - 재계획 후에도 실패 → `harness.sh set <id> blocked` 하고 TREE.md 의 해당 줄 아래에 `> 차단 사유: …` 를 적는다. 다른 독립 노드로 계속.
+7. **curator** 호출 조건: 재시도가 있었던 노드, reviewer high 발견이 나온 노드, builder 가 `learned:` 를 보고한 노드. 그 외에는 부르지 않는다 (비용 절약).
+
+### 병렬화 (선택)
+
+`next` 가 주는 노드와 **같은 부모의 다른 READY 형제**가 있고 `files:` 가 전혀 겹치지 않으면, builder 를
+`isolation: worktree` 로 최대 3개 동시에 돌려도 된다. 끝나면 하나씩 현재 브랜치로 merge 하고 매 merge 뒤 verify.sh 를 돌린다.
+충돌이 나면 병렬을 멈추고 순차로 돌아간다. 확신이 없으면 순차로 한다.
+
+### 되돌릴 수 없는 작업
+
+데이터 삭제 · 운영 DB 마이그레이션 실행 · 결제 · 외부로 실제 발송 · 권한/보안 정책 완화 · `git push` 는
+실행하지 않는다. 해당 노드는 코드와 테스트까지만 만들고 실제 실행 단계는 `blocked` 로 남겨 사용자 판단을 받는다.
+
+---
+
+## Phase C — 마감
+
+1. `bash .harness/verify.sh` 전체 PASS 확인.
+2. **reviewer (mode: feature)** — `run.json` 의 `base_commit` 부터 HEAD 까지. SPEC 의 SE- 목록이 전부 대응됐는지 대조.
+   high 발견이 있으면 새 노드로 트리에 추가하고 Phase B 로 돌아간다 (Stop hook 이 계속 진행시킨다).
+3. **curator (feature-close)** — 이번 feature 전체 회고.
+4. `REPORT.md` 작성 (feature 디렉토리):
+   ```markdown
+   # REPORT — <feature>
+   ## 결과        완료 노드 N/M, 커밋 범위, 검증 결과
+   ## 수용 기준     AC 별 충족 여부와 증거(테스트 이름)
+   ## 사이드이펙트   SE 별 대응과 검증
+   ## 내린 가정     A- 목록 — 사용자가 뒤집고 싶을 수 있는 것
+   ## 차단 / 남은 일  blocked 노드와 필요한 결정
+   ## 자가 개선     추가된 교훈 · 스킬
+   ```
+5. 커밋 후 `bash .harness/bin/harness.sh finish done` (차단이 남았으면 `finish blocked`).
+6. 사용자에게 보고 — CLAUDE.md 의 호칭/톤 규칙을 따른다. 3~5줄 + REPORT.md 경로.
+
+---
+
+## 컨텍스트 관리 (롱러닝)
+
+- 서브에이전트 결과는 요약만 받는다. 큰 파일을 오케스트레이터 컨텍스트로 읽지 않는다.
+- 압축이 일어나면 SessionStart hook 이 현재 상태를 다시 넣어 준다. 그때는 `harness.sh status` 부터 확인하고 이어간다.
+- Stop hook 이 "다음 노드" 를 알려주며 계속시키면, 그 노드부터 노드 처리를 재개한다.
+- 사용자가 중간에 질문하면 짧게 답하고 루프로 돌아간다. 멈추길 원하면 `/pause` 를 안내한다.

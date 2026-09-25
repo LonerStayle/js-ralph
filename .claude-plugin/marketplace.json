@@ -1,16 +1,19 @@
-  {
-    "name": "js-ralph",
-    "owner": { "name": "LonerStayle", "email": "dlwlstjq410@gmail.com" },
-    "plugins": [
-      {
-        "name": "js-ralph",
-        "source": {
-          "source": "url",
-          "url": "https://github.com/LonerStayle/js-ralph.git",
-          "ref": "v1.2.0"
-        },
-        "description": "명령 한 번으로 사용자 맞춤 랄프 루프를 만드는 랄프 전용 하네스 플러그인",
-        "version": "1.2.0"
-      }
-    ]
-  }
+{
+  "name": "js-ralph",
+  "owner": {
+    "name": "LonerStayle",
+    "email": "dlwlstjq410@gmail.com"
+  },
+  "plugins": [
+    {
+      "name": "js-ralph",
+      "source": {
+        "source": "url",
+        "url": "https://github.com/LonerStayle/js-ralph.git",
+        "ref": "v2.0.0"
+      },
+      "description": "기획 한 건을 넣으면 영향 분석부터 모듈 트리 설계, 바텀업 구현, 검증, 보고까지 끝까지 무인으로 진행하는 롱러닝 코딩 하네스 플러그인",
+      "version": "2.0.0"
+    }
+  ]
+}
