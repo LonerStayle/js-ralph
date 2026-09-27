@@ -55,3 +55,10 @@ load helpers
   grep -q "1 라운드" "$PLUGIN_ROOT/skills/feature-orchestration/SKILL.md"
   grep -q "품질 기준 문장에 적힌 것만" "$PLUGIN_ROOT/agents/planner.md"
 }
+
+@test "orchestration: 서브에이전트 포그라운드 호출 · 가드 정지 후 자가 재개 금지" {
+  f="$PLUGIN_ROOT/skills/feature-orchestration/SKILL.md"
+  grep -q "run_in_background: false" "$f"
+  grep -q "스스로 재개하지 않는다" "$f"
+  grep -q "run_in_background: false" "$PLUGIN_ROOT/skills/next-proposals/SKILL.md"
+}

@@ -235,3 +235,16 @@ decision() { # 빈 출력 = 허용
   run session_hook startup
   [[ "$(printf '%s' "$output" | jq -r .hookSpecificOutput.additionalContext)" =~ "proposal timeout" ]]
 }
+
+@test "stop: 커밋 전 작업 중인 파일 변경도 진척으로 본다 (서브에이전트 작업 중 오판 방지)" {
+  install_harness; sample_feature login; harness start login
+  git add -A && git commit -qm plan
+  stop_hook s1 >/dev/null; stop_hook s1 >/dev/null
+  [ "$(jq -r .stall_count .harness/run.json)" = "1" ]
+  echo "work in progress" > wip.js
+  stop_hook s1 >/dev/null
+  [ "$(jq -r .stall_count .harness/run.json)" = "0" ]
+  echo "more" >> wip.js
+  stop_hook s1 >/dev/null
+  [ "$(jq -r .stall_count .harness/run.json)" = "0" ]
+}

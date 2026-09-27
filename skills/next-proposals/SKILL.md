@@ -20,7 +20,7 @@ user-invocable: false
 DIR=$(bash .harness/bin/harness.sh proposal new)
 ```
 
-**lens-user · lens-expert · lens-maker** 세 서브에이전트를 **한 메시지에서 동시에** 호출한다
+**lens-user · lens-expert · lens-maker** 세 서브에이전트를 **한 메시지에서 동시에, 포그라운드로**(`run_in_background: false`) 호출한다
 (플러그인 에이전트라 `js-ralph:lens-user` 처럼 보일 수 있다).
 - 세 에이전트에게 같은 입력만 준다: "다음 기능 후보 2개를 네 시야로 제안하라. 제안 디렉토리: $DIR".
 - **서로의 결과를 전달하지 않는다.** 앞 에이전트의 결과를 뒤 에이전트 프롬프트에 넣으면 시야가 섞여 이 절차가 무의미해진다.
@@ -28,7 +28,7 @@ DIR=$(bash .harness/bin/harness.sh proposal new)
 
 ## 2. 정리
 
-**synthesizer** 호출 — 제안 디렉토리 경로만 넘긴다. 결과 `$DIR/CARDS.md` 를 확인하고:
+**synthesizer** 를 포그라운드로 호출 — 제안 디렉토리 경로만 넘긴다. 결과 `$DIR/CARDS.md` 를 확인하고:
 
 ```bash
 bash .harness/bin/harness.sh proposal open "$DIR"

@@ -14,7 +14,7 @@
 #   harness.sh finish [done|blocked]  run 종료 상태 기록
 #   harness.sh status               사람이 읽는 요약
 #   harness.sh feature-dir          활성 feature 디렉토리 경로
-#   harness.sh fingerprint          진척 지문 (TREE.md + git HEAD) — 정체 감지용
+#   harness.sh fingerprint          진척 지문 (TREE.md + git HEAD + 커밋 전 작업) — 정체 감지용
 #   harness.sh quality              품질 기준(CLAUDE.md Q-n) 강제 현황 — 측정형인데 스크립트 없으면 exit 1
 #   harness.sh proposal new|open <dir>|choose <C>|wait|timeout|card [C]|done|status
 #                                   다음 기능 제안 카드 선택 대기 · 기한 후 자동 진행 판단
@@ -326,10 +326,16 @@ cmd_status() {
 }
 
 cmd_fingerprint() {
+  # 진척 지문 — 트리 상태 + 커밋 + 아직 커밋 안 된 작업(수정 · 새 파일). 서브에이전트가 파일을 고치는 중이면 진척으로 본다.
   local t head
   t=$(tree_file)
   head=$(git -C "$ROOT" rev-parse HEAD 2>/dev/null || echo nogit)
-  { cat "$t"; echo "$head"; } | cksum | awk '{print $1}'
+  { cat "$t"; echo "$head"
+    git -C "$ROOT" status --porcelain 2>/dev/null
+    git -C "$ROOT" diff 2>/dev/null
+    git -C "$ROOT" ls-files -z --others --exclude-standard 2>/dev/null \
+      | (cd "$ROOT" && xargs -0 -r cksum 2>/dev/null)
+  } | cksum | awk '{print $1}'
 }
 
 sub="${1:-status}"; shift || true

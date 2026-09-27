@@ -10,6 +10,12 @@ user-invocable: false
 서브에이전트에게 맡기고(플러그인 에이전트라 `js-ralph:planner` 처럼 보일 수 있다), 너는 상태를 전이시키고 결과를 확인한다.
 이렇게 해야 네 컨텍스트가 작게 유지되어 수 시간짜리 실행을 버틴다.
 
+**서브에이전트는 포그라운드로 호출한다** (Agent 도구의 `run_in_background: false`). 결과가 올 때까지 턴을 끝내지 않는다.
+백그라운드로 띄우고 턴을 끝내면 Stop 가드가 "진척 없음" 으로 세어 실행을 멈춘다. 서로 독립인 호출(병렬 builder 등)은 한 메시지에 여러 개를 포그라운드로 넣는다.
+
+**가드가 멈춘 실행(blocked · paused)을 스스로 재개하지 않는다.** `harness.sh resume` 은 사용자가 `/resume` 을 실행했을 때만 쓴다.
+멈췄으면 이유를 짧게 보고하고 턴을 끝낸다.
+
 **상태의 단일 출처는 파일이다**: `SPEC.md` · `TREE.md` · `.harness/run.json` · git 로그.
 기억에 의존하지 말고, 헷갈리면 `bash .harness/bin/harness.sh status` 를 본다.
 노드/실행 상태는 반드시 `harness.sh` 로만 바꾼다 (run.json 직접 수정은 hook 이 막는다).
