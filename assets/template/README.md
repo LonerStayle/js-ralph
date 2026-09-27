@@ -1,110 +1,77 @@
 # {{PROJECT_NAME}}
 
-ralph 하네스 (v3-classic). js-ralph factory 에서 eject 됨.
-Geoffrey Huntley 의 오리지널 Ralph Wiggum 패턴 + 대표님 호칭 톤.
+js-ralph v2 롱러닝 무인 코딩 하네스로 만든 프로젝트입니다. 마감은 없습니다 — 비전은 방향이고, 기능이 하나씩 쌓이며 넓어집니다.
+사용자 · 전문가 · 만드는 사람 세 시야가 다음 기능을 제안하면 대표님이 고르고, 고른 기능은 영향 분석 → 모듈 트리 설계 → 바텀업 구현 → 검증 → 보고까지 한 세션에서 끝까지 진행합니다.
 
 ---
 
 ## 사전 조건
 
-goal 루프(`/goal` 커맨드 + 자기 재투입 Stop hook)는 **js-ralph 플러그인**에 내재화돼 있습니다. 이 하네스를 만든 js-ralph 플러그인이 Claude Code 에 설치돼 있으면 별도 설치가 필요 없습니다. (옛 버전의 외부 `ralph-loop` 플러그인은 더 이상 필요하지 않습니다.)
-
-설치 확인: `/help` 또는 `/` 메뉴에 `/goal` 이 보여야 합니다.
+- Claude Code 에 **js-ralph 플러그인**(v2 이상) 설치 — 훅과 에이전트가 플러그인에 들어 있습니다.
+- `jq`, `git` (필수) · 스택별 도구 (`uv`, `npm`, `./gradlew` 등)
 
 ---
 
-## 5 단계 빠른 시작
-
-### 1) 새 Claude 세션
+## 빠른 시작
 
 ```bash
-cd ~/jinsup_ralph/{{PROJECT_NAME}}
+cd {{PROJECT_NAME}}
 claude
 ```
 
-ralph 가 `CLAUDE.md` 의 `onboarded: false` 를 감지하고 `vision-intake` skill (비전 인터뷰) 을 즉시 시작합니다:
-**"대표님 안녕하십니까. 8 가지 질문을 드리겠습니다."**
+1. **비전 인터뷰** — 첫 세션에서 `vision-intake` 가 9 질문(방향 · 사용자 · 전문가 · 방향 신호 · 금지선 · 품질 기준 · 외부 의존 · 스택 · 초점)을 드립니다. "확정" 하시면 `CLAUDE.md` 가 동결됩니다.
+2. **다음 기능 고르기** — 세 시야의 후보 카드가 뜹니다.
+   ```
+   /js-ralph:pick C2                       # 그대로
+   /js-ralph:pick C2 문자 말고 카카오톡으로   # 수정해서
+   /js-ralph:feature <직접 기획>            # 카드 대신 직접
+   /js-ralph:next                          # 다시 제안받기
+   ```
+   30분 안에 안 고르시면 "만드는 사람" 카드(사용자 눈에 보이는 변화 없는 토대 작업)만 자동 진행합니다. 연속 3회까지이고, 그 뒤에는 대표님을 기다립니다.
+3. **무인 진행** — 계획(SPEC/TREE) 확정 후 끝까지 자동 진행하고, 끝나면 다음 후보를 다시 제안합니다. 진행 상황은 언제든:
+   ```
+   /js-ralph:status
+   ```
+4. **멈춤 / 재개**
+   ```
+   /js-ralph:pause     # 현재 노드 마무리 후 정지
+   /js-ralph:resume    # 차단 해소 후 또는 새 세션에서 이어가기
+   ```
 
-> ⚠️ skill 이름은 `vision-intake` 입니다 (Claude Code 빌트인 `onboarding` skill 과 충돌 회피).
+---
 
-### 2) vision-intake 8 질문 답변 → CLAUDE.md 의 "비전 / 사양" 자동 합성
-
-| 질문 | 내용 |
-|------|------|
-| 1. 비전 | 한 줄 비전 |
-| 2. 사용자 | 1~2 문장 페르소나 |
-| 3. 핵심 산출물 | 1~3 가지 |
-| 4. 성공 정의 | 정량 + 정성 |
-| 5. 금지 / 범위 밖 | |
-| 6. 외부 의존 | API / 데이터 / 입력 |
-| 7. 규모·일정·비용 cap | cycles ≤ N 등 |
-| 8. 기술 스택 override | 디폴트와 다르게 갈지 |
-
-답변 후 ralph 가 `CLAUDE.md` 의 "비전 / 사양" 섹션 8 항목을 채웁니다. 검토 후 **"확정"** 발화로 `onboarded: true` + 타임스탬프 박힙니다.
-
-### 3) `AGENTS.md` 의 검증 명령 채우기
-
-`AGENTS.md` 에 lint / typecheck / tests 명령을 도메인에 맞게 채우고 로컬에서 1회 돌려 모두 exit 0 인지 확인하세요. 이게 ralph 의 backpressure 입니다.
-
-### 4) goal 루프 시작
-
-vision-intake 동결("확정") 직후 자동 시작 게이트가 뜹니다. 수동으로 시작하려면:
+## 파일 구조
 
 ```
-/goal "Read PROMPT.md and follow it." --completion-promise "PROJECT_DONE" --max-iterations 150
+CLAUDE.md                      비전 · 금지선 · 품질 기준 + 작동 방식 + 호칭 (동결 후 보호)
+.harness/
+  FOCUS.md                     지금의 초점 (선택, 언제든 교체)
+  config.json                  제안 대기 시간(30분) · 자동 진행 연속 상한(3) — 대표님만 변경
+  proposals/<시각>/CARDS.md     세 시야 제안 카드
+  verify.sh                    결정적 검증 게이트 (보호) — 스택 자동 탐지
+  verify.d/*.sh                추가 검증 · 측정형 품질 기준 q-<n>-*.sh — 추가만 가능
+  bin/harness.sh               트리·실행 상태 CLI (보호)
+  features/<slug>/SPEC.md      기획 · 영향 분석 · 예외 카탈로그 · 수용 기준
+  features/<slug>/TREE.md      모듈 트리 + 노드 상태
+  features/<slug>/REPORT.md    완료 보고
+  memory/MEMORY.md             프로젝트 교훈 (자동 로드)
+.claude/
+  settings.json                권한 (auto 모드) · 자동 메모리 · 자동 압축
+  skills/                      에이전트가 스스로 만들고 고치는 프로젝트 스킬
 ```
 
-- 매 iteration ralph 가 fresh context 로 `CLAUDE.md` (자동 로드) + `PROMPT.md` (명령에 의해 Read) 를 입력으로 받습니다
-- PROMPT.md §1 절차 따라 `specs/`, `AGENTS.md`, `IMPLEMENTATION_PLAN.md` 읽고 한 task 진행 → 검증 → commit → 종료
-- goal 루프 Stop hook 이 동일 prompt 재투입 (중단은 `/cancel-goal`)
-
-### 5) PROJECT_DONE 검토 (마지막 1회)
-
-ralph 가 `PROJECT_DONE` 를 출력하고 종료하면 결과물을 직접 검토.
-
 ---
 
-## 5 파일 (Geoffrey 정석 4 + Claude Code 자동 로드 1)
+## 안전장치
 
-| 파일 | 누가 | 무엇 |
-|------|------|------|
-| **`CLAUDE.md`** | factory + vision-intake 자동 합성 | 비전·사양 + 환경 컨텍스트 + 호칭 톤 (Claude Code 자동 로드) |
-| `PROMPT.md` | factory + 표지판 누적 | ralph 행동 매뉴얼 (도구 중립) |
-| `AGENTS.md` | 대표님 또는 ralph 첫 iteration | 빌드/검증 명령 (60줄 이하) |
-| `IMPLEMENTATION_PLAN.md` | ralph 99% 자동 | TODO 체크리스트 |
-| `specs/*.md` | (선택) 대표님 또는 ralph 첫 iteration | 도메인 추가 사양 — api/ui/data 등 |
+| 위험 | 막는 방법 |
+|------|-----------|
+| 에이전트가 테스트/검증을 약하게 바꿔 통과 | `verify.sh` · `bin/` · 기존 `verify.d/` 수정 차단 (PreToolUse hook) |
+| 비전을 에이전트가 임의 변경 | 동결 후 `CLAUDE.md` 수정 차단 |
+| 같은 실패를 무한 반복 | 트리/커밋 변화 없이 3회 연속 멈추면 자동 blocked |
+| 폭주 | `max_continuations` (기본 300) 도달 시 자동 일시정지 |
+| 대표님 모르게 제품 방향이 바뀜 | 자동 진행은 "만드는 사람" 카드만, 연속 3회 상한 |
+| 품질 기준이 흐지부지 | 측정형은 스크립트가 커밋 차단, 판단형은 모든 노드 리뷰에서 위반 시 완료 불가 |
+| 되돌릴 수 없는 결정 | 데이터 삭제·결제·보안 정책 변경 노드는 `[!] blocked` 로 대표님 판단 대기 |
 
----
-
-## 사람 개입 횟수
-
-| 시점 | 내용 | 횟수 |
-|------|------|------|
-| vision-intake (비전 인터뷰) | 8 질문 답변 | ~8 회 |
-| 동결 | "확정" 발화 → `onboarded: true` | 1 회 |
-| AGENTS.md 검증 명령 채우기 | (또는 ralph 가 채워도 됨) | 0~1 회 |
-| 표지판 추가 | ralph 가 실수 반복 시 PROMPT.md `<!-- signs -->` 아래 한 줄 | 0~N 회 |
-| PROJECT_DONE 검토 | 결과물 확인 | 1 회 |
-
----
-
-## 4 원칙 매핑
-
-자세한 설명은 `CLAUDE.md`.
-
-| 원칙 | 구현 |
-|------|------|
-| 1. 단일 prompt 자기 재투입 | js-ralph 의 goal 루프 Stop hook (`/goal` 으로 시작) |
-| 2. 사람이 작성한 spec | `CLAUDE.md` 의 비전/사양 섹션 + (선택) `specs/*` |
-| 3. fresh context 매 iteration | goal 루프 기본 동작 + CLAUDE.md 자동 로드 |
-| 4. deterministic backpressure | `AGENTS.md` 의 lint/typecheck/tests |
-
----
-
-## v2 와의 차이 (이 하네스를 처음 보시는 분께)
-
-이전 v2 는 11 phase + 14 skill + 15 페르소나 + gate-verify framework 였습니다. self-referential 함정에 빠지는 걸 막으려는 시도였지만, ralph 의 본질 (단순/멍청/지속) 을 잃었습니다.
-
-v3-classic 은 Geoffrey Huntley 의 오리지널 패턴 (4 파일 + bash loop) 으로 회귀했고, **Claude Code 의 CLAUDE.md 자동 로드를 활용해 비전을 CLAUDE.md 안에 단일 출처**로 둡니다 (Geoffrey 의 specs/vision.md 분리 모델 대비 더 단순). 호칭은 "대표님" 만 유지.
-
-자세한 회귀 결정 기록은 factory 의 `HANDOFF.md` 참조.
+`auto` 권한 모드를 쓸 수 없는 환경이면 `.claude/settings.json` 의 `defaultMode` 를 `acceptEdits` 로 바꾸십시오 (허용 목록 밖 명령은 확인을 묻게 됩니다).

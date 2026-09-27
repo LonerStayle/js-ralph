@@ -27,3 +27,12 @@ __pycache__/
 node_modules/
 .npm/
 .pnpm-store/
+
+# harness runtime state (세션 로컬)
+.harness/run.json
+.harness/.run.*
+.harness/.tree.*
+.harness/proposal.json
+.harness/.prop.*
+.harness/agents.active
+.harness/agents.active.tmp

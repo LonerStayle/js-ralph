@@ -1,60 +1,43 @@
 # CLAUDE.md — js-ralph (Claude Code 플러그인)
 
-이 저장소(`js-ralph`)는 **Claude Code 플러그인 `js-ralph` 의 개발/배포 저장소** 다. 직접 ralph 실행 환경을 운영하지 않는다.
+이 저장소(`js-ralph`)는 **Claude Code 플러그인 `js-ralph` 의 개발/배포 저장소** 다. 여기서 하네스를 직접 운영하지 않는다.
 
-새 ralph 하네스를 만들려면 Claude Code 에서 `/setup-ralph` 슬래시를 한 번 실행하면 된다 — 플러그인이 동봉한 5파일이 현재 디렉토리에 박히고 vision-intake 비전 인터뷰가 즉시 시작된다.
+새 하네스는 빈 디렉토리에서 `/js-ralph:setup-harness` 한 번 → 비전 인터뷰(9 질문) → 세 시야 제안 카드 중 `/js-ralph:pick` → 무인 진행.
 
-> 옛 factory 모델 (`template/` 폴더 + `bash scripts/new-harness.sh`) 은 `pre-plugin` 브랜치 (`b8fb626`) 에 통째 보존되어 있다. 필요 시 `git checkout pre-plugin` 으로 fallback 가능.
-
----
-
-## 핵심 디자인 (v3-classic, 2026-05-17 회귀)
-
-Geoffrey Huntley 의 오리지널 Ralph Wiggum 패턴 + 대표님 호칭 톤.
-**js-ralph 내재화 goal 루프 (Stop hook) + CLAUDE.md 자동 로드** 메커니즘 활용.
-
-> v1.2.0 부터 자기 재투입 루프를 js-ralph 플러그인 안에 내재화했다 (`/goal` 커맨드 + `hooks/goal-stop-hook.sh`). 옛 외부 `ralph-loop` 플러그인 의존은 제거됨.
-
-> v3-classic 은 v2 framework (11 phase + 14 skill + 15 페르소나 + gate-verify) 를 의도적으로 폐기한 결과다. 회귀 의사결정 전문은 `HANDOFF.md`.
+> v1.x (Geoffrey Huntley Ralph Wiggum 루프, v3-classic 템플릿) 는 **`v1.2.0` 태그**에, 그 이전 factory 모델은 `pre-plugin` 브랜치에 보존되어 있다.
+> v2.0.0 에서 루프 방식을 전부 제거했다. 설계 결정 전문: `docs/features/2026-09-25-long-running-harness/design.md`
 
 ---
 
-## template 의 5 파일 (Geoffrey 정석 4 + Claude Code 자동 로드 1)
+## 핵심 디자인 (v2 — 롱러닝 무인 코딩 하네스)
 
-| 파일 | 무엇 | 누가 |
-|------|------|------|
-| `CLAUDE.md` | 비전 + 환경 컨텍스트 + 호칭 톤 (Claude Code 자동 로드) | vision-intake skill 자동 합성 |
-| `PROMPT.md` | ralph 행동 매뉴얼 (도구 중립) | factory 박음 + 표지판 누적 |
-| `AGENTS.md` | 빌드/검증 명령 (60줄 이하) | 대표님 또는 ralph 첫 iteration |
-| `IMPLEMENTATION_PLAN.md` | TODO 체크리스트 | ralph 99% 자동 |
-| `specs/*.md` | (선택) 도메인 추가 사양 — api/ui/data 등 | 대표님 또는 ralph 첫 iteration |
+| 원칙 | 강제 메커니즘 |
+|------|---------------|
+| 마감 없는 비전 — 대표님은 방향 · 금지선 · 품질 기준까지만 | vision-intake 9 질문 (마감 · 규모 · 최종 산출물 질문 없음), `verify-plugin.sh` [8] |
+| 다음 기능은 세 시야 제안 → 대표님 선택 | `next-proposals` 스킬 + lens-user · lens-expert · lens-maker (서로 결과 비공유) + synthesizer |
+| 무응답 시 만드는 사람 카드만 자동 진행 | `harness.sh proposal wait/timeout` (기본 30분, 연속 3회 상한 — `.harness/config.json`) |
+| 품질 기준 강제 | `[측정]` → `verify.d/q-<n>-*.sh` 없으면 `coverage` 가 착수 차단 / `[판단]` → reviewer 필수 점검, 위반 = high |
+| 롱러닝 — 한 세션이 feature 끝까지 | `hooks/stop-guard.sh` (트리에서 다음 노드 계산, 정체 3회·상한 시 해제, 서브에이전트 실행 중엔 정체로 세지 않음) + `hooks/session-context.sh` (압축 뒤 방향 복원) + `hooks/subagent-track.sh` |
+| 바텀업 모듈 트리 | `TREE.md` + `harness.sh next` (자식·deps 전부 done 이어야 착수) |
+| 사이드이펙트·예외 우선 | planner 의 SPEC.md (영향 분석 · SE · E · AC) + `harness.sh coverage` 게이트 + reviewer |
+| 결정적 합격 기준 | `.harness/verify.sh` (스택 자동 탐지 + `verify.d/`). LLM 채점 없음 |
+| 자가 개선 (메모리 + 스킬까지) | curator → `.harness/memory/` · `.claude/skills/`. 합격 기준은 `hooks/protect-files.sh` 가 보호 |
 
----
-
-## 4 원칙 (Geoffrey 정석)
-
-| # | 원칙 | factory 가 박는 강제 메커니즘 |
-|---|------|--------------------------------|
-| 1 | 단일 prompt + 자기 재투입 루프 | js-ralph 내재화 goal 루프 Stop hook (`hooks/goal-stop-hook.sh`, `/goal` 으로 시작) |
-| 2 | 사람이 작성한 파일 spec | template/CLAUDE.md 의 비전 섹션 (vision-intake skill 합성 후 동결, `onboarded: true`) |
-| 3 | fresh context 매 iteration | goal 루프 기본 동작 + CLAUDE.md 자동 로드 |
-| 4 | deterministic backpressure | template/AGENTS.md 의 lint/typecheck/tests |
-
-→ LLM 채점 (gate-verify 같은 것) **없음**. 페르소나 framework **없음**.
+→ 플러그인은 얇게 유지한다. 커맨드 7 · 에이전트 8 · 스킬 3 · hook 5 (스크립트 4). 새 구성요소를 늘리기 전에 Claude Code 기본 기능으로 되는지 먼저 본다 (v2 framework 11 phase · 14 skill · 15 페르소나 재발 방지).
 
 ---
 
 ## 사용자 호칭
 
-`template/CLAUDE.md` 가 "사용자 = 대표님" 으로 자동 치환한다. `PROMPT.md` 는 도구 중립이라 "사용자" 라고만 표기.
+`assets/template/CLAUDE.md` 가 "사용자 = 대표님" 으로 치환한다. `agents/*` · `skills/feature-orchestration` · `skills/next-proposals` · `.harness/*` 는 도구 중립이라 "사용자" 라고만 쓴다 (`verify-plugin.sh` [9] 가 강제).
 
-→ 호칭/톤 변경은 `template/CLAUDE.md` 의 "공통 — 사용자 호칭 / 톤" 섹션에서만 한다. PROMPT.md / AGENTS.md / IMPLEMENTATION_PLAN.md 에 "대표님" 박지 마라 (verify-v3-template.sh 의 [5] 검증).
+→ 호칭/톤 변경은 `assets/template/CLAUDE.md` 의 "공통 — 사용자 호칭 / 톤" 섹션에서만 한다.
 
 ---
 
 ## 기본 기술 스택 (factory 디폴트)
 
-명시적 다른 지시 없으면 이 조합으로 진행한다. eject 후 vision-intake 8번째 질문에서 override 가능.
+명시적 다른 지시 없으면 이 조합으로 진행한다. 비전 인터뷰 8번 질문에서 override 가능.
 
 | 영역 | 기본 |
 |------|------|
@@ -64,58 +47,42 @@ Geoffrey Huntley 의 오리지널 Ralph Wiggum 패턴 + 대표님 호칭 톤.
 | Database | Postgres |
 | 그 외 (인프라/CI/캐시) | 합리적 기본값 |
 
-`template/CLAUDE.md` 의 "공통 — 기본 기술 스택" 섹션에도 같은 표가 박혀 있다 (자가완결).
+`assets/template/CLAUDE.md` 의 "공통 — 기본 기술 스택" 섹션에도 같은 표가 박혀 있다 (자가완결).
 
 ---
 
-## 저장소 디렉토리 구조 (js-ralph 플러그인)
+## 저장소 디렉토리 구조
 
 ```
 js-ralph/
-  .claude-plugin/plugin.json     플러그인 manifest (name=js-ralph)
-  commands/
-    setup-ralph.md               /setup-ralph 슬래시 entry (하네스 박기)
-    goal.md                      /goal — goal 루프(자기 재투입) 시작
-    cancel-goal.md               /cancel-goal — 활성 goal 루프 취소
-    expand-plan.md               /expand-plan — IMPLEMENTATION_PLAN.md TODO 보강
-  hooks/
-    hooks.json                   Stop hook 등록 (컨벤션 자동 로드)
-    goal-stop-hook.sh            goal 루프 재투입 본체 (.claude/goal-loop.local.md 감지)
-  scripts/
-    setup-ralph.sh               하네스 박는 본체 bash
-    goal-loop.sh                 goal 루프 상태파일 생성 (/goal 이 호출)
-    verify-plugin.sh             플러그인 정적 검증
-  assets/template/               5파일 + 부속 (현재 디렉토리에 cp 될 원본)
-    CLAUDE.md  PROMPT.md  AGENTS.md  IMPLEMENTATION_PLAN.md  README.md
-    .claude/settings.json
-    .gitignore  VERSION (=3)  specs/.gitkeep
-  skills/vision-intake/SKILL.md  비전 인터뷰 8 질문 + FR-7 자동 시작 게이트
-  tests/                         bats 단위/통합 테스트
-  docs/                          v2 historical + 의사결정 기록 (보존)
-  HANDOFF.md                     다음 세션 인수인계
-  CLAUDE.md  README.md           이 두 파일 (저장소 메타)
+  .claude-plugin/plugin.json, marketplace.json
+  commands/        setup-harness · next · pick · feature · resume · pause · status
+  agents/          제안: lens-user · lens-expert · lens-maker (읽기 전용) · synthesizer
+                   구현: planner · builder · reviewer (읽기 전용) · curator
+  skills/          vision-intake · next-proposals · feature-orchestration
+  hooks/           hooks.json · session-context.sh · stop-guard.sh · protect-files.sh · subagent-track.sh
+  scripts/         setup-harness.sh (설치 본체) · verify-plugin.sh (정적 검증)
+  assets/template/ 하네스 원본 — CLAUDE.md · README.md · VERSION(=4) · .gitignore
+                   .harness/{verify.sh, verify.d/, bin/harness.sh, memory/MEMORY.md, features/,
+                             config.json, FOCUS.md}
+                   .claude/{settings.json, skills/}
+  tests/           bats (setup · harness CLI · 제안/품질 · hooks · verify 게이트 · 플러그인)
+  docs/            v2 framework historical + 의사결정 기록 (보존)
 ```
 
-옛 `template/` / `scripts/new-harness.sh` / `scripts/verify-v3-template.sh` 는 `pre-plugin` 브랜치에 보존.
+hook 은 `${CLAUDE_PLUGIN_ROOT}/assets/template/.harness/bin/harness.sh` 를 호출한다 — 판정 로직은 `harness.sh` 한 곳에만 둔다.
 
 ---
 
-## ejected 하네스 위치 (사용자가 정함)
+## 작업 시 주의 (플러그인 유지보수자용)
 
-`/setup-ralph` 슬래시는 **현재 디렉토리** 에 5파일을 박는다. 옛 모델의 `~/jinsup_ralph/<NAME>/` 강제 위치는 폐기됨 — 어디서든 빈 디렉토리에 가서 `claude` + `/setup-ralph` 한 번이면 됨.
-
-이미 ejected 된 8 하네스 (Nova / TtokTtok / PlanB / shortdub / chuljeun-nyang / king_of_law / ai_news_scraping / autoproducts-feature-dev) 는 자체 git 저장소로 독립. 본 플러그인화 갱신은 신규 하네스에만 적용 — 기존 8 하네스 마이그 안 함.
-
----
-
-## 작업 시 주의 (factory 유지보수자용)
-
-1. **`template/CLAUDE.md` 는 자가완결** — eject 후 부모 (js-ralph) 참조 불가. 5 파일 디자인 / 4 원칙 / 호칭 변경 시 template/CLAUDE.md 도 같이 갱신.
-2. **호칭/톤은 template/CLAUDE.md 에만** — PROMPT/AGENTS/PLAN/specs 는 도구 중립. verify-v3-template.sh 의 [5] 가 강제.
-3. **scripts/new-harness.sh 의 eject 안내** 가 template 모델과 일치해야 한다 (실제 동작과 안내 메시지 sync).
-4. **template 변경 후 `bash scripts/verify-v3-template.sh`** 로 정적 검증. [PASS] 전엔 commit 금지.
-5. **v2 → v3-classic 회귀 의사결정 전문은 `HANDOFF.md`** 에 보존됨. 새 큰 변경 시 HANDOFF.md 도 같이 갱신.
-6. **`docs/`** 안의 v2 시절 자료 (PRD, tech-design, v2-rollout-guide 등) 는 historical 로 의도적 보존. 갈아엎지 마라.
+1. **`assets/template/CLAUDE.md` 는 자가완결** — 설치 후 이 저장소를 참조할 수 없다. 작동 방식 / 호칭 / 스택 변경 시 같이 갱신.
+2. **파싱되는 형식 세 가지** — TREE.md 노드 줄, CARDS.md 카드 헤더(`## C<n> [시야] 제목`), CLAUDE.md 품질 기준 줄(`- Q-<n> [측정|판단] …`).
+   바꾸면 `harness.sh` 파서 · 해당 에이전트/스킬 예시 · 테스트를 같이 바꾼다.
+3. **변경 후 `bash scripts/verify-plugin.sh` 와 `bats tests/`** 둘 다 통과해야 commit 한다.
+4. **큰 설계 변경은 `docs/features/<날짜>-<이름>/design.md`** 에 결정과 이유를 남긴다.
+5. **`docs/`** 의 v2 framework 시절 자료와 plugin 전환 기록은 historical 로 보존. 갈아엎지 마라.
+6. `META-BUILDER-HANDOFF.md` 는 별도 플러그인(`/new-skill`) 인수인계 문서다. v2 의 curator 가 프로젝트 스킬 자동 생성을 일부 흡수했으니 착수 전 범위를 다시 정한다.
 
 ---
 
@@ -164,9 +131,9 @@ vX.Y.Z 배포 완료. 다른 ejected 하네스에서 적용하시려면:
 
 ---
 
-## 신규 하네스 생성 시 체크리스트 (factory 운영자)
+## 릴리스 체크리스트
 
-- [ ] `bash scripts/verify-v3-template.sh` → [PASS]
-- [ ] `bash scripts/new-harness.sh <NAME>` → eject 성공
-- [ ] eject 안내 메시지가 v3-classic 흐름과 일치하는지 확인
-- [ ] (선택) ejected 하네스에서 vision-intake skill 1회 돌려서 sanity 확인
+- [ ] `bash scripts/verify-plugin.sh` → [PASS]
+- [ ] `bats tests/` → 전부 ok
+- [ ] 빈 임시 디렉토리에서 `bash scripts/setup-harness.sh` → 설치 성공
+- [ ] (선택) 실제 Claude Code 세션에서 `/js-ralph:setup-harness` → 인터뷰 → 작은 `/js-ralph:feature` 1건 sanity
