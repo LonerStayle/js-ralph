@@ -17,13 +17,13 @@
 | 다음 기능은 세 시야 제안 → 대표님 선택 | `next-proposals` 스킬 + lens-user · lens-expert · lens-maker (서로 결과 비공유) + synthesizer |
 | 무응답 시 만드는 사람 카드만 자동 진행 | `harness.sh proposal wait/timeout` (기본 30분, 연속 3회 상한 — `.harness/config.json`) |
 | 품질 기준 강제 | `[측정]` → `verify.d/q-<n>-*.sh` 없으면 `coverage` 가 착수 차단 / `[판단]` → reviewer 필수 점검, 위반 = high |
-| 롱러닝 — 한 세션이 feature 끝까지 | `hooks/stop-guard.sh` (트리에서 다음 노드 계산, 정체 3회·상한 시 해제) + `hooks/session-context.sh` (압축 뒤 방향 복원) |
+| 롱러닝 — 한 세션이 feature 끝까지 | `hooks/stop-guard.sh` (트리에서 다음 노드 계산, 정체 3회·상한 시 해제, 서브에이전트 실행 중엔 정체로 세지 않음) + `hooks/session-context.sh` (압축 뒤 방향 복원) + `hooks/subagent-track.sh` |
 | 바텀업 모듈 트리 | `TREE.md` + `harness.sh next` (자식·deps 전부 done 이어야 착수) |
 | 사이드이펙트·예외 우선 | planner 의 SPEC.md (영향 분석 · SE · E · AC) + `harness.sh coverage` 게이트 + reviewer |
 | 결정적 합격 기준 | `.harness/verify.sh` (스택 자동 탐지 + `verify.d/`). LLM 채점 없음 |
 | 자가 개선 (메모리 + 스킬까지) | curator → `.harness/memory/` · `.claude/skills/`. 합격 기준은 `hooks/protect-files.sh` 가 보호 |
 
-→ 플러그인은 얇게 유지한다. 커맨드 7 · 에이전트 8 · 스킬 3 · hook 3. 새 구성요소를 늘리기 전에 Claude Code 기본 기능으로 되는지 먼저 본다 (v2 framework 11 phase · 14 skill · 15 페르소나 재발 방지).
+→ 플러그인은 얇게 유지한다. 커맨드 7 · 에이전트 8 · 스킬 3 · hook 5 (스크립트 4). 새 구성요소를 늘리기 전에 Claude Code 기본 기능으로 되는지 먼저 본다 (v2 framework 11 phase · 14 skill · 15 페르소나 재발 방지).
 
 ---
 
@@ -60,7 +60,7 @@ js-ralph/
   agents/          제안: lens-user · lens-expert · lens-maker (읽기 전용) · synthesizer
                    구현: planner · builder · reviewer (읽기 전용) · curator
   skills/          vision-intake · next-proposals · feature-orchestration
-  hooks/           hooks.json · session-context.sh · stop-guard.sh · protect-files.sh
+  hooks/           hooks.json · session-context.sh · stop-guard.sh · protect-files.sh · subagent-track.sh
   scripts/         setup-harness.sh (설치 본체) · verify-plugin.sh (정적 검증)
   assets/template/ 하네스 원본 — CLAUDE.md · README.md · VERSION(=4) · .gitignore
                    .harness/{verify.sh, verify.d/, bin/harness.sh, memory/MEMORY.md, features/,

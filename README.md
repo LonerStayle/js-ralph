@@ -62,7 +62,7 @@
 | 커맨드 7 | `commands/` setup-harness · next · pick · feature · resume · pause · status |
 | 에이전트 8 | `agents/` 제안: lens-user · lens-expert · lens-maker · synthesizer / 구현: planner · builder · reviewer · curator |
 | 스킬 3 | `skills/` vision-intake · next-proposals · feature-orchestration |
-| hook 3 | `hooks/` SessionStart(방향 복원) · Stop(실행 가드) · PreToolUse(합격 기준 보호) |
+| hook 5 | `hooks/` SessionStart(방향 복원) · Stop(실행 가드) · PreToolUse(합격 기준 보호) · SubagentStart/Stop(실행 중 서브에이전트 추적) |
 | 템플릿 | `assets/template/` CLAUDE.md · `.harness/`(verify.sh, bin/harness.sh, memory/) · `.claude/settings.json` |
 
 ### 원칙
