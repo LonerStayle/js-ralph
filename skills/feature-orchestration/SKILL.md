@@ -19,8 +19,8 @@ user-invocable: false
 ## Phase A — 계획 (기획이 새로 들어왔을 때만)
 
 1. **slug 결정**: 기획을 요약한 영문 kebab-case (`email-verification`). `.harness/features/<slug>/` 가 이미 있으면 뒤에 `-2` 등.
-2. `mkdir -p .harness/features/<slug>` 후 **planner** 호출 — 기획 원문 전체와 디렉토리 경로를 넘긴다.
-3. **reviewer (mode: plan)** 호출. high/medium 발견이 있으면 planner 에게 발견 목록을 넘겨 SPEC/TREE 를 보강시킨다. 최대 2 라운드.
+2. `mkdir -p .harness/features/<slug>` 후 **planner** 호출 — 기획 원문 전체, 디렉토리 경로, **크기**(카드의 `크기:` — 없으면 planner 가 추정)를 넘긴다.
+3. **reviewer (mode: plan)** 호출. **high 발견만** planner 에게 넘겨 반영한다. **1 라운드**로 끝낸다 (계획 검토가 계획을 부풀리지 않게).
 4. 게이트 — 둘 다 통과해야 착수 (coverage 는 SPEC 의 AC-/E- 에 더해, **아직 검증 스크립트가 없는 측정형 품질 기준 Q-** 도 노드 매핑을 요구한다):
    ```bash
    HARNESS_FEATURE=<slug> bash .harness/bin/harness.sh coverage   # uncovered 0
@@ -51,7 +51,8 @@ bash .harness/bin/harness.sh next
 3. builder 보고를 믿지 말고 **직접 검증한다**: `bash .harness/verify.sh` 가 exit 0 인지, `git log -1` 에 노드 커밋이 있는지 확인.
 4. **reviewer (mode: node)** 호출 — 노드 ID 와 커밋 범위. 발견 처리:
    - high → 같은 노드를 builder 로 다시 돌려 고친다 (재시도 1회로 셈).
-   - medium → SPEC.md 예외 카탈로그에 새 `E-` 항목으로 추가하고, TREE.md 에서 이 노드의 부모 아래 **새 노드로 추가**해 `covers:` 에 매핑한다. 트리는 이렇게 자란다.
+   - medium → 이 feature 의 AC/E 와 직접 관련 있을 때만 SPEC.md 에 새 `E-` 로 추가하고 이 노드의 부모 아래 **새 노드**로 매핑한다.
+     관련 없으면 REPORT 의 `후속 후보` 로 보낸다. 트리 전체 노드 수가 **계획 시점의 1.5배**를 넘으면 더 키우지 않고 후속 후보로 보낸다.
    - low → REPORT 후보로만 적어둔다.
    - `[판단]` 품질 기준(Q-) 위반은 심각도와 무관하게 **high 로 취급**한다 — 품질 기준은 모든 노드가 지킨다.
 5. 검증 PASS + high 발견 없음 → `bash .harness/bin/harness.sh set <id> done`

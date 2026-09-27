@@ -7,7 +7,7 @@
 #   CLAUDE.md                 비전 / 사양 (사람 영역)
 #   .harness/verify.sh        결정적 검증 게이트
 #   .harness/bin/*            상태 CLI
-#   .harness/verify.d/<기존>   추가 검증 — 새 파일 추가는 허용, 기존 파일 수정/삭제는 차단
+#   .harness/verify.d/<기존>   추가 검증 — 새 파일 추가 허용. 진행 중 feature 가 만든 파일은 그 feature 동안 수정 가능, 그 전부터 있던 파일은 수정/삭제 차단
 #   .harness/config.json      제안 대기 시간 · 자동 진행 상한 (사람만 변경)
 #   .harness/run.json         실행 상태 — 항상 harness.sh 로만 변경 (동결 여부 무관)
 #   .harness/proposal.json    제안 상태 — 항상 harness.sh 로만 변경 (동결 여부 무관)
@@ -31,6 +31,17 @@ deny() {
   exit 0
 }
 
+# 진행 중(running/paused/blocked)인 feature 의 base_commit 에 없던 파일이면 참
+created_in_current_feature() {
+  local st base
+  [ -f .harness/run.json ] || return 1
+  st=$(jq -r '.status // empty' .harness/run.json)
+  case "$st" in running|paused|blocked) ;; *) return 1 ;; esac
+  base=$(jq -r '.base_commit // empty' .harness/run.json)
+  [ -n "$base" ] || return 1
+  ! git cat-file -e "$base:$1" 2>/dev/null
+}
+
 # 경로가 보호 대상인지 판정. $2=1 이면 "새 파일 생성" 시도.
 check_path() {
   local p="$1" creating="$2"
@@ -48,7 +59,9 @@ check_path() {
     .harness/verify.sh|.harness/bin/*)
       deny "$p 는 합격 기준이라 에이전트가 수정할 수 없습니다. 검증을 늘리려면 .harness/verify.d/ 에 새 .sh 파일을 추가하십시오." ;;
     .harness/verify.d/*)
-      if [ "$creating" -eq 0 ] || [ -e "$p" ]; then
+      # 지금 진행 중인 feature 가 새로 만든 검증 스크립트는 그 feature 가 끝날 때까지 고칠 수 있다
+      # (처음 쓸 때의 버그를 바로잡기 위함). feature 시작 시점(base_commit)에 이미 있던 것은 잠김.
+      if [ -e "$p" ] && ! created_in_current_feature "$p"; then
         deny "기존 추가 검증($p)은 수정/삭제할 수 없습니다 (검증 약화 방지). 새 파일로 추가하십시오."
       fi ;;
   esac

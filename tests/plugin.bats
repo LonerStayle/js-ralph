@@ -48,3 +48,10 @@ load helpers
   grep -q "/js-ralph:feature" "$PLUGIN_ROOT/README.md"
   grep -q "v1.2.0" "$PLUGIN_ROOT/CLAUDE.md"
 }
+
+@test "비례 원칙: planner 크기 상한 · reviewer 과잉 설계 지적 · 계획 리뷰 1라운드" {
+  grep -q "5개 이하" "$PLUGIN_ROOT/agents/planner.md"
+  grep -q "과잉 설계" "$PLUGIN_ROOT/agents/reviewer.md"
+  grep -q "1 라운드" "$PLUGIN_ROOT/skills/feature-orchestration/SKILL.md"
+  grep -q "품질 기준 문장에 적힌 것만" "$PLUGIN_ROOT/agents/planner.md"
+}

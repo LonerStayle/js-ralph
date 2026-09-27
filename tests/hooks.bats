@@ -147,6 +147,24 @@ decision() { # 빈 출력 = 허용
   done
 }
 
+@test "protect: verify.d — 진행 중 feature 가 만든 스크립트는 그 feature 동안 수정 가능, 끝나면 잠김" {
+  install_harness; freeze_vision; sample_feature login
+  git add -A && git commit -qm plan
+  harness start login
+  echo 'exit 0' > .harness/verify.d/q-1-cov.sh
+  git add -A && git commit -qm "q-1 script"
+  run pre_hook Edit "{\"file_path\":\"$PWD/.harness/verify.d/q-1-cov.sh\"}"
+  [ "$(decision "$output")" = "allow" ]
+  harness finish done
+  run pre_hook Edit "{\"file_path\":\"$PWD/.harness/verify.d/q-1-cov.sh\"}"
+  [ "$(decision "$output")" = "deny" ]
+  # 다음 feature 에서는 이전 feature 가 만든 스크립트가 base_commit 에 있으므로 잠김
+  sample_feature signup; git add -A && git commit -qm plan2
+  harness start signup
+  run pre_hook Edit "{\"file_path\":\"$PWD/.harness/verify.d/q-1-cov.sh\"}"
+  [ "$(decision "$output")" = "deny" ]
+}
+
 @test "protect: verify.d — 새 파일 추가 허용, 기존 파일 수정/덮어쓰기 차단" {
   install_harness; freeze_vision
   run pre_hook Write "{\"file_path\":\"$PWD/.harness/verify.d/10-e2e.sh\"}"
