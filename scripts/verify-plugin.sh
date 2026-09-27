@@ -21,23 +21,29 @@ ver=$(jq -r .version "$mf")
 [ "$(jq -r '.plugins[0].source.ref' "$mk")" = "v$ver" ] && pass "marketplace ref=v$ver" || fail "marketplace ref != v$ver"
 
 echo; echo "[2] commands"
-for c in setup-harness feature resume pause status; do
+for c in setup-harness feature next pick resume pause status; do
   f="commands/$c.md"; need "$f"
   grep -q '^description:' "$ROOT/$f" 2>/dev/null || fail "$f: description frontmatter"
 done
 
 echo; echo "[3] agents"
-for a in planner builder reviewer curator; do
+for a in planner builder reviewer curator lens-user lens-expert lens-maker synthesizer; do
   f="agents/$a.md"; need "$f"
   grep -qE "^name:[[:space:]]*$a[[:space:]]*$" "$ROOT/$f" 2>/dev/null || fail "$f: name frontmatter"
   grep -q '^description:' "$ROOT/$f" 2>/dev/null || fail "$f: description frontmatter"
   grep -q '^tools:' "$ROOT/$f" 2>/dev/null || fail "$f: tools frontmatter"
 done
 # reviewer 는 읽기 전용이어야 함 (판정자가 코드를 고치면 안 됨)
-grep -E '^tools:' "$ROOT/agents/reviewer.md" | grep -qE 'Write|Edit' && fail "reviewer 에 Write/Edit 권한" || pass "reviewer read-only"
+for a in reviewer lens-user lens-expert lens-maker; do
+  grep -E '^tools:' "$ROOT/agents/$a.md" | grep -qE 'Write|Edit' && fail "$a 에 Write/Edit 권한" || pass "$a read-only"
+done
+# 세 시야는 서로의 결과를 보지 않는다 — 각 lens 는 다른 lens 파일을 읽으라고 지시하지 않아야 함
+for a in lens-user lens-expert lens-maker; do
+  grep -q "읽지 않는다" "$ROOT/agents/$a.md" && pass "$a 독립성 명시" || fail "$a: 다른 시야 비열람 규칙 부재"
+done
 
 echo; echo "[4] skills"
-for s in vision-intake feature-orchestration; do
+for s in vision-intake feature-orchestration next-proposals; do
   f="skills/$s/SKILL.md"; need "$f"
   grep -qE "^name:[[:space:]]*$s[[:space:]]*$" "$ROOT/$f" 2>/dev/null || fail "$f: name frontmatter"
 done
@@ -64,7 +70,7 @@ grep -q 'set -euo pipefail' "$ROOT/scripts/setup-harness.sh" && pass "setup-harn
 echo; echo "[7] template"
 for f in CLAUDE.md README.md VERSION .gitignore .claude/settings.json .claude/skills/.gitkeep \
          .harness/verify.sh .harness/bin/harness.sh .harness/memory/MEMORY.md \
-         .harness/features/.gitkeep .harness/verify.d/.gitkeep; do
+         .harness/features/.gitkeep .harness/verify.d/.gitkeep .harness/config.json .harness/FOCUS.md; do
   [ -e "$T/$f" ] && pass "$f" || fail "missing: assets/template/$f"
 done
 [ "$(tr -d '[:space:]' < "$T/VERSION")" = "4" ] && pass "VERSION=4" || fail "VERSION != 4"
@@ -75,18 +81,23 @@ done
 jq -e . "$T/.claude/settings.json" >/dev/null 2>&1 && pass "settings.json valid JSON" || fail "settings.json invalid"
 jq -e '.hooks' "$T/.claude/settings.json" >/dev/null 2>&1 && fail "template settings 에 hooks (플러그인 hooks 와 중복)" || pass "template settings: no hooks"
 jq -e '.autoMemoryEnabled == true' "$T/.claude/settings.json" >/dev/null 2>&1 && pass "autoMemoryEnabled" || fail "autoMemoryEnabled != true"
+jq -e '.proposal_wait_minutes == 30 and .max_auto_chain == 3' "$T/.harness/config.json" >/dev/null 2>&1 \
+  && pass "config: 대기 30분 · 자동 연속 3" || fail "config.json 기본값 (30분 / 3회) 불일치"
 
 echo; echo "[8] CLAUDE.md 게이팅 · 메모리 import"
 ct="$T/CLAUDE.md"
 grep -qE '^onboarded:[[:space:]]*false' "$ct" && pass "onboarded: false" || fail "onboarded: false 부재"
 [ "$(grep -cE '^### [1-8]\.' "$ct")" = "8" ] && pass "비전 8 항목" || fail "비전 항목 수 != 8"
 grep -q '^@.harness/memory/MEMORY.md' "$ct" && pass "MEMORY.md import" || fail "MEMORY.md import 부재"
+grep -q '^### 3\. 전문가' "$ct" && pass "전문가 항목" || fail "### 3. 전문가 부재"
+grep -q '^### 6\. 품질 기준' "$ct" && pass "품질 기준 항목" || fail "### 6. 품질 기준 부재"
+grep -qE '규모·일정·비용|핵심 산출물' "$ct" && fail "마감형 항목 잔존 (규모·일정·비용 / 핵심 산출물)" || pass "마감형 항목 없음"
 
 echo; echo "[9] 호칭 — 대표님은 CLAUDE.md/README/vision-intake 에만"
 for f in assets/template/CLAUDE.md assets/template/README.md skills/vision-intake/SKILL.md; do
   grep -q "대표님" "$ROOT/$f" && pass "대표님 in $f" || fail "대표님 missing in $f"
 done
-for f in agents/*.md skills/feature-orchestration/SKILL.md assets/template/.harness/verify.sh \
+for f in agents/*.md skills/feature-orchestration/SKILL.md skills/next-proposals/SKILL.md assets/template/.harness/verify.sh \
          assets/template/.harness/bin/harness.sh assets/template/.harness/memory/MEMORY.md; do
   grep -q "대표님" "$ROOT"/$f 2>/dev/null && fail "대표님 leaked into $f" || pass "tool-neutral: $f"
 done

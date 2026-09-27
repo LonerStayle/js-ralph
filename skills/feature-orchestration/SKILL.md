@@ -21,7 +21,7 @@ user-invocable: false
 1. **slug 결정**: 기획을 요약한 영문 kebab-case (`email-verification`). `.harness/features/<slug>/` 가 이미 있으면 뒤에 `-2` 등.
 2. `mkdir -p .harness/features/<slug>` 후 **planner** 호출 — 기획 원문 전체와 디렉토리 경로를 넘긴다.
 3. **reviewer (mode: plan)** 호출. high/medium 발견이 있으면 planner 에게 발견 목록을 넘겨 SPEC/TREE 를 보강시킨다. 최대 2 라운드.
-4. 게이트 — 둘 다 통과해야 착수:
+4. 게이트 — 둘 다 통과해야 착수 (coverage 는 SPEC 의 AC-/E- 에 더해, **아직 검증 스크립트가 없는 측정형 품질 기준 Q-** 도 노드 매핑을 요구한다):
    ```bash
    HARNESS_FEATURE=<slug> bash .harness/bin/harness.sh coverage   # uncovered 0
    HARNESS_FEATURE=<slug> bash .harness/bin/harness.sh next        # READY … 이어야 함
@@ -53,6 +53,7 @@ bash .harness/bin/harness.sh next
    - high → 같은 노드를 builder 로 다시 돌려 고친다 (재시도 1회로 셈).
    - medium → SPEC.md 예외 카탈로그에 새 `E-` 항목으로 추가하고, TREE.md 에서 이 노드의 부모 아래 **새 노드로 추가**해 `covers:` 에 매핑한다. 트리는 이렇게 자란다.
    - low → REPORT 후보로만 적어둔다.
+   - `[판단]` 품질 기준(Q-) 위반은 심각도와 무관하게 **high 로 취급**한다 — 품질 기준은 모든 노드가 지킨다.
 5. 검증 PASS + high 발견 없음 → `bash .harness/bin/harness.sh set <id> done`
 6. 실패 처리 (builder FAIL 또는 high 재시도 후에도 실패):
    - 이 노드의 누적 시도가 **3회 미만** → 실패 요약을 붙여 builder 재호출.
@@ -84,6 +85,7 @@ bash .harness/bin/harness.sh next
    # REPORT — <feature>
    ## 결과        완료 노드 N/M, 커밋 범위, 검증 결과
    ## 수용 기준     AC 별 충족 여부와 증거(테스트 이름)
+   ## 품질 기준     Q 별 — [측정] 스크립트 결과 / [판단] 리뷰 점검 결과
    ## 사이드이펙트   SE 별 대응과 검증
    ## 내린 가정     A- 목록 — 사용자가 뒤집고 싶을 수 있는 것
    ## 차단 / 남은 일  blocked 노드와 필요한 결정
@@ -91,6 +93,8 @@ bash .harness/bin/harness.sh next
    ```
 5. 커밋 후 `bash .harness/bin/harness.sh finish done` (차단이 남았으면 `finish blocked`).
 6. 사용자에게 보고 — CLAUDE.md 의 호칭/톤 규칙을 따른다. 3~5줄 + REPORT.md 경로.
+7. `finish done` 이었으면 **`next-proposals` 스킬로 이어서** 다음 기능 후보를 제안한다 (프로젝트에는 마감이 없다).
+   `finish blocked` 이면 제안하지 않고 차단 해소를 기다린다.
 
 ---
 

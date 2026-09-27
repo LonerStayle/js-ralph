@@ -20,11 +20,27 @@ load helpers
   done
 }
 
-@test "vision-intake: 동결은 마지막 Edit, 첫 기획 게이트는 /js-ralph:feature" {
+@test "vision-intake: 9 질문 · 마감 질문 없음 · 품질 기준 분류 · 동결 후 세 시야 제안" {
   f="$PLUGIN_ROOT/skills/vision-intake/SKILL.md"
   grep -q "동결은 항상 마지막 Edit" "$f"
-  grep -q "/js-ralph:feature" "$f"
-  ! grep -qE "goal|PROMPT\.md" "$f"
+  grep -q "next-proposals" "$f"
+  grep -q "\[측정\]" "$f"
+  grep -q "\[판단\]" "$f"
+  grep -q "전문가" "$f"
+  ! grep -qE "규모·일정·비용|핵심 산출물|goal|PROMPT\.md" "$f"
+}
+
+@test "next-proposals: 세 시야 병렬 · 결과 비공유 · synthesizer · 백그라운드 대기" {
+  f="$PLUGIN_ROOT/skills/next-proposals/SKILL.md"
+  for w in lens-user lens-expert lens-maker synthesizer "동시에" "전달하지 않는다" "proposal wait" run_in_background "proposal open"; do
+    grep -q "$w" "$f" || { echo "missing: $w"; return 1; }
+  done
+}
+
+@test "feature-orchestration: 마감 후 다음 제안으로 이어짐, 판단형 품질 위반은 high" {
+  f="$PLUGIN_ROOT/skills/feature-orchestration/SKILL.md"
+  grep -q "next-proposals" "$f"
+  grep -q "high 로 취급" "$f"
 }
 
 @test "README / CLAUDE.md 가 v2 흐름을 안내한다" {

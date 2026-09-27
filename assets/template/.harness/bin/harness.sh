@@ -15,6 +15,9 @@
 #   harness.sh status               사람이 읽는 요약
 #   harness.sh feature-dir          활성 feature 디렉토리 경로
 #   harness.sh fingerprint          진척 지문 (TREE.md + git HEAD) — 정체 감지용
+#   harness.sh quality              품질 기준(CLAUDE.md Q-n) 강제 현황 — 측정형인데 스크립트 없으면 exit 1
+#   harness.sh proposal new|open <dir>|choose <C>|wait|timeout|card [C]|done|status
+#                                   다음 기능 제안 카드 선택 대기 · 기한 후 자동 진행 판단
 #
 # TREE.md 노드 한 줄 형식 (들여쓰기는 자유, ID 가 계층을 결정):
 #   - [ ] 1.2.3 제목 — files: a.py, b.py — deps: 1.1 — covers: AC-1, E-3
@@ -152,11 +155,40 @@ cmd_counts() {
     END { printf "%d %d %d %d %d\n", n, d, g, t, b }'
 }
 
+# 측정형 품질 기준 중 verify.d 스크립트가 아직 없는 ID (예: Q-1 → .harness/verify.d/q-1-*.sh 또는 q-1.sh)
+quality_missing() {
+  [ -f "$ROOT/CLAUDE.md" ] || return 0
+  local q n
+  for q in $(grep -oE '^- Q-[0-9]+ \[측정\]' "$ROOT/CLAUDE.md" | grep -oE 'Q-[0-9]+' || true); do
+    n=$(echo "$q" | tr 'Q' 'q')
+    local found=0 f
+    for f in "$H/verify.d/$n.sh" "$H/verify.d/$n-"*.sh; do [ -f "$f" ] && found=1; done
+    [ "$found" -eq 1 ] || echo "$q"
+  done
+}
+
+cmd_quality() {
+  [ -f "$ROOT/CLAUDE.md" ] || die "CLAUDE.md 가 없습니다."
+  local lines missing
+  lines=$(grep -E '^- Q-[0-9]+ \[(측정|판단)\]' "$ROOT/CLAUDE.md" || true)
+  if [ -z "$lines" ]; then echo "품질 기준 없음"; return 0; fi
+  missing=$(quality_missing)
+  echo "$lines" | while IFS= read -r l; do
+    q=$(echo "$l" | grep -oE 'Q-[0-9]+' | head -1)
+    case "$l" in
+      *"[측정]"*) if echo "$missing" | grep -qx "$q"; then echo "MISSING  $l"; else echo "ENFORCED $l"; fi ;;
+      *) echo "REVIEW   $l" ;;
+    esac
+  done
+  [ -z "$missing" ]
+}
+
 cmd_coverage() {
   local fd; fd=$(feature_dir)
   [ -f "$fd/SPEC.md" ] || die "SPEC.md 가 없습니다: $fd/SPEC.md"
   local ids missing=0
-  ids=$(grep -owE '(AC|E)-[0-9]+' "$fd/SPEC.md" | sort -u || true)
+  # SPEC 의 수용 기준·예외 + 아직 검증 스크립트가 없는 측정형 품질 기준은 모두 노드에 매핑돼야 한다
+  ids=$( { grep -owE '(AC|E)-[0-9]+' "$fd/SPEC.md" || true; quality_missing; } | sort -u)
   for x in $ids; do
     if ! grep -E 'covers:' "$fd/TREE.md" | grep -qE "(^|[^0-9A-Za-z-])$x([^0-9]|$)"; then
       echo "uncovered: $x"; missing=1
@@ -164,6 +196,80 @@ cmd_coverage() {
   done
   [ "$missing" -eq 0 ] && echo "coverage ok ($(echo "$ids" | grep -c . || true) ids)"
   return "$missing"
+}
+
+# --- 다음 기능 제안 (proposal) ---------------------------------------------
+PROP="$H/proposal.json"
+CONFIG="$H/config.json"
+cfg() { jq -r "$1 // empty" "$CONFIG" 2>/dev/null || true; }
+prop_get() { [ -f "$PROP" ] && jq -r "$1 // empty" "$PROP" 2>/dev/null || true; }
+prop_set() { local tmp; tmp=$(mktemp "$H/.prop.XXXXXX"); jq "$@" "$PROP" > "$tmp" && mv "$tmp" "$PROP"; }
+
+# CARDS.md 의 카드 헤더: "## C<n> [시야] 제목"
+card_line() { grep -E "^## $1 \[" "$2/CARDS.md" | head -1; }
+
+cmd_proposal() {
+  local sub="${1:-status}"; shift || true
+  case "$sub" in
+    new) # 새 제안 디렉토리 생성 후 경로 출력
+      local d="$H/proposals/$(date -u +%Y%m%d-%H%M%S)"
+      mkdir -p "$d"; echo "$d" ;;
+    open) # open <dir> — CARDS.md 가 준비된 제안을 사용자 선택 대기 상태로
+      [ $# -eq 1 ] || die "사용: harness.sh proposal open <dir>"
+      local d="$1" wait chain
+      [ -f "$d/CARDS.md" ] || die "CARDS.md 가 없습니다: $d"
+      grep -qE '^## C[0-9]+ \[' "$d/CARDS.md" || die "CARDS.md 에 카드 헤더(## C<n> [시야] 제목)가 없습니다."
+      wait=$(cfg .proposal_wait_minutes); wait=${wait:-30}
+      chain=$(prop_get .auto_chain); chain=${chain:-0}
+      jq -n --arg d "$d" --argjson now "$(date +%s)" --argjson w "$wait" --argjson c "$chain" '{
+        status: "pending", dir: $d, opened_at: $now, deadline: ($now + $w * 60),
+        card: "", auto_chain: $c }' > "$PROP"
+      echo "[harness] 제안 대기 시작 (${wait}분 후 자동 진행 판단): $d" ;;
+    choose) # choose <C번호> — 사람의 선택. 자동 진행 연쇄 카운터 초기화
+      [ $# -eq 1 ] || die "사용: harness.sh proposal choose <C번호>"
+      [ "$(prop_get .status)" = "pending" ] || die "대기 중인 제안이 없습니다."
+      card_line "$1" "$(prop_get .dir)" >/dev/null || die "카드 $1 이 없습니다."
+      prop_set --arg c "$1" '.status = "chosen" | .card = $c | .auto_chain = 0'
+      echo "[harness] 선택: $(card_line "$1" "$(prop_get .dir)")" ;;
+    wait) # 기한까지 대기 → 선택되면 CHOSEN, 기한 지나면 자동 판단 (AUTO / WAIT_USER / NO_AUTO_CARD)
+      while [ "$(prop_get .status)" = "pending" ] && [ "$(date +%s)" -lt "$(prop_get .deadline)" ]; do
+        sleep "${HARNESS_POLL_SECONDS:-20}"
+      done
+      cmd_proposal timeout ;;
+    timeout) # 기한 경과 시 자동 진행 판단 (SessionStart 에서도 호출)
+      local st; st=$(prop_get .status)
+      case "$st" in
+        "") echo "NONE"; return 0 ;;
+        chosen) echo "CHOSEN $(prop_get .card)"; return 0 ;;
+        auto) echo "AUTO $(prop_get .card)"; return 0 ;;
+      esac
+      if [ "$(date +%s)" -lt "$(prop_get .deadline)" ]; then echo "PENDING"; return 0; fi
+      local max chain card
+      max=$(cfg .max_auto_chain); max=${max:-3}
+      chain=$(prop_get .auto_chain); chain=${chain:-0}
+      if [ "$chain" -ge "$max" ]; then
+        echo "WAIT_USER (자동 진행 연속 ${chain}/${max} — 사용자 확인 필요)"; return 0
+      fi
+      # 자동 진행은 "만드는 사람" 단독 카드만 — 사용자 눈에 보이는 방향은 사람만 바꾼다
+      card=$(grep -oE '^## C[0-9]+ \[만드는 사람\]' "$(prop_get .dir)/CARDS.md" | head -1 | grep -oE 'C[0-9]+' || true)
+      if [ -z "$card" ]; then echo "NO_AUTO_CARD"; return 0; fi
+      prop_set --arg c "$card" '.status = "auto" | .card = $c | .auto_chain += 1'
+      echo "AUTO $card" ;;
+    card) # card [C번호] — 카드 본문 출력 (기본: 선택/자동 진행된 카드)
+      local c="${1:-$(prop_get .card)}" d; d=$(prop_get .dir)
+      [ -n "$c" ] && [ -n "$d" ] || die "출력할 카드가 없습니다."
+      awk -v c="$c" '$0 ~ "^## " c " \\[" {p=1; print; next} /^## /{p=0} p' "$d/CARDS.md" ;;
+    done) # 선택/자동 카드를 feature 로 넘긴 뒤 제안 종료
+      [ -f "$PROP" ] && prop_set '.status = "consumed"'; echo "[harness] 제안 종료" ;;
+    status)
+      if [ ! -f "$PROP" ]; then echo "제안 없음"; return 0; fi
+      local now dl; now=$(date +%s); dl=$(prop_get .deadline)
+      echo "proposal: $(prop_get .status)  card: $(prop_get .card)  auto_chain: $(prop_get .auto_chain)/$(cfg .max_auto_chain)"
+      echo "dir:      $(prop_get .dir)"
+      [ "$(prop_get .status)" = "pending" ] && echo "남은 대기: $(( (dl - now) / 60 ))분"
+      true ;;
+    *) die "알 수 없는 proposal 명령: $sub" ;;
+  esac
 }
 
 cmd_start() {
@@ -239,6 +345,8 @@ case "$sub" in
   status) cmd_status ;;
   feature-dir) feature_dir ;;
   fingerprint) cmd_fingerprint ;;
+  quality) cmd_quality ;;
+  proposal) cmd_proposal "$@" ;;
   -h|--help|help) sed -n '2,24p' "$0" | sed 's/^# \{0,1\}//' ;;
   *) die "알 수 없는 명령: $sub (help 참고)" ;;
 esac

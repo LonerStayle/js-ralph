@@ -8,7 +8,9 @@
 #   .harness/verify.sh        결정적 검증 게이트
 #   .harness/bin/*            상태 CLI
 #   .harness/verify.d/<기존>   추가 검증 — 새 파일 추가는 허용, 기존 파일 수정/삭제는 차단
+#   .harness/config.json      제안 대기 시간 · 자동 진행 상한 (사람만 변경)
 #   .harness/run.json         실행 상태 — 항상 harness.sh 로만 변경 (동결 여부 무관)
+#   .harness/proposal.json    제안 상태 — 항상 harness.sh 로만 변경 (동결 여부 무관)
 
 set -uo pipefail
 
@@ -34,13 +36,15 @@ check_path() {
   local p="$1" creating="$2"
   p="${p#"$PWD"/}"; p="${p#./}"
   case "$p" in
-    .harness/run.json)
-      deny "run.json 은 직접 수정하지 않습니다. bash .harness/bin/harness.sh (start/pause/resume/finish) 를 사용하십시오." ;;
+    .harness/run.json|.harness/proposal.json)
+      deny "$p 는 직접 수정하지 않습니다. bash .harness/bin/harness.sh 를 사용하십시오." ;;
   esac
   [ "$LOCKED" -eq 1 ] || return 0
   case "$p" in
     CLAUDE.md)
       deny "CLAUDE.md 는 비전 동결 이후 보호됩니다. 배운 점은 .harness/memory/ 에 기록하고, 비전 변경이 필요하면 사용자에게 요청하십시오." ;;
+    .harness/config.json)
+      deny "config.json(제안 대기 시간 · 자동 진행 상한)은 사람만 바꿀 수 있습니다." ;;
     .harness/verify.sh|.harness/bin/*)
       deny "$p 는 합격 기준이라 에이전트가 수정할 수 없습니다. 검증을 늘리려면 .harness/verify.d/ 에 새 .sh 파일을 추가하십시오." ;;
     .harness/verify.d/*)
@@ -61,12 +65,12 @@ case "$TOOL" in
     CMD=$(printf '%s' "$INPUT" | jq -r '.tool_input.command // empty')
     # 셸 검사는 최선 노력(best-effort)이다: 쓰기 연산자 뒤 같은 명령 조각에 보호 경로가 나오면 차단.
     OPS='(>|(^|[[:space:];&|(])(tee|rm|mv|cp|truncate|chmod|sed[[:space:]]+-i[^[:space:]]*)[[:space:]])'
-    # run.json 은 동결 여부와 무관하게 쓰기 차단
-    if printf '%s' "$CMD" | grep -qE "${OPS}[^|;&]*\.harness/run\.json"; then
-      deny "run.json 은 직접 수정하지 않습니다. bash .harness/bin/harness.sh 를 사용하십시오."
+    # run.json · proposal.json 은 동결 여부와 무관하게 쓰기 차단
+    if printf '%s' "$CMD" | grep -qE "${OPS}[^|;&]*\.harness/(run|proposal)\.json"; then
+      deny "run.json / proposal.json 은 직접 수정하지 않습니다. bash .harness/bin/harness.sh 를 사용하십시오."
     fi
     if [ "$LOCKED" -eq 1 ]; then
-      if printf '%s' "$CMD" | grep -qE "${OPS}[^|;&]*(\.harness/(verify\.sh|bin/|verify\.d/)|(^|[[:space:]]|\./)CLAUDE\.md)"; then
+      if printf '%s' "$CMD" | grep -qE "${OPS}[^|;&]*(\.harness/(verify\.sh|bin/|verify\.d/|config\.json)|(^|[[:space:]]|\./)CLAUDE\.md)"; then
         deny "보호된 합격 기준 파일(CLAUDE.md / .harness/verify.sh / bin / verify.d)을 셸로 변경할 수 없습니다."
       fi
       if printf '%s' "$CMD" | grep -qE 'git[[:space:]]+(checkout|restore|rm|mv)[^|;&]*(\.harness/(verify\.sh|bin/|verify\.d/)|CLAUDE\.md)'; then

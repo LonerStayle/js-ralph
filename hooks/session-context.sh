@@ -36,6 +36,17 @@ $SUMMARY
   esac
 fi
 
+# 다음 기능 제안 대기 상태 — 세션이 끊긴 사이 기한이 지났을 수 있다
+if [ -z "$CTX" ] && [ -f .harness/proposal.json ] && [ "$(jq -r '.status // empty' .harness/proposal.json)" = "pending" ]; then
+  DEADLINE=$(jq -r '.deadline // 0' .harness/proposal.json)
+  if [ "$(date +%s)" -ge "$DEADLINE" ]; then
+    CTX="[harness] 다음 기능 제안의 선택 기한이 지났습니다. next-proposals 스킬 3번 표대로 \`bash .harness/bin/harness.sh proposal timeout\` 을 실행해 처리하십시오."
+  else
+    CTX="[harness] 다음 기능 제안 카드가 선택을 기다리고 있습니다 ($(jq -r '.dir' .harness/proposal.json)/CARDS.md, 남은 $(( (DEADLINE - $(date +%s)) / 60 ))분).
+카드를 다시 보여드리고 next-proposals 스킬 3번대로 \`bash .harness/bin/harness.sh proposal wait\` 를 백그라운드로 다시 실행하십시오."
+  fi
+fi
+
 [ -n "$CTX" ] || exit 0
 jq -n --arg c "$CTX" '{hookSpecificOutput: {hookEventName: "SessionStart", additionalContext: $c}}'
 exit 0

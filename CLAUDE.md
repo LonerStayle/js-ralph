@@ -2,7 +2,7 @@
 
 이 저장소(`js-ralph`)는 **Claude Code 플러그인 `js-ralph` 의 개발/배포 저장소** 다. 여기서 하네스를 직접 운영하지 않는다.
 
-새 하네스는 빈 디렉토리에서 `/js-ralph:setup-harness` 한 번 → 비전 인터뷰 → `/js-ralph:feature <기획>` 으로 무인 진행.
+새 하네스는 빈 디렉토리에서 `/js-ralph:setup-harness` 한 번 → 비전 인터뷰(9 질문) → 세 시야 제안 카드 중 `/js-ralph:pick` → 무인 진행.
 
 > v1.x (Geoffrey Huntley Ralph Wiggum 루프, v3-classic 템플릿) 는 **`v1.2.0` 태그**에, 그 이전 factory 모델은 `pre-plugin` 브랜치에 보존되어 있다.
 > v2.0.0 에서 루프 방식을 전부 제거했다. 설계 결정 전문: `docs/features/2026-09-25-long-running-harness/design.md`
@@ -13,19 +13,23 @@
 
 | 원칙 | 강제 메커니즘 |
 |------|---------------|
+| 마감 없는 비전 — 대표님은 방향 · 금지선 · 품질 기준까지만 | vision-intake 9 질문 (마감 · 규모 · 최종 산출물 질문 없음), `verify-plugin.sh` [8] |
+| 다음 기능은 세 시야 제안 → 대표님 선택 | `next-proposals` 스킬 + lens-user · lens-expert · lens-maker (서로 결과 비공유) + synthesizer |
+| 무응답 시 만드는 사람 카드만 자동 진행 | `harness.sh proposal wait/timeout` (기본 30분, 연속 3회 상한 — `.harness/config.json`) |
+| 품질 기준 강제 | `[측정]` → `verify.d/q-<n>-*.sh` 없으면 `coverage` 가 착수 차단 / `[판단]` → reviewer 필수 점검, 위반 = high |
 | 롱러닝 — 한 세션이 feature 끝까지 | `hooks/stop-guard.sh` (트리에서 다음 노드 계산, 정체 3회·상한 시 해제) + `hooks/session-context.sh` (압축 뒤 방향 복원) |
 | 바텀업 모듈 트리 | `TREE.md` + `harness.sh next` (자식·deps 전부 done 이어야 착수) |
 | 사이드이펙트·예외 우선 | planner 의 SPEC.md (영향 분석 · SE · E · AC) + `harness.sh coverage` 게이트 + reviewer |
 | 결정적 합격 기준 | `.harness/verify.sh` (스택 자동 탐지 + `verify.d/`). LLM 채점 없음 |
 | 자가 개선 (메모리 + 스킬까지) | curator → `.harness/memory/` · `.claude/skills/`. 합격 기준은 `hooks/protect-files.sh` 가 보호 |
 
-→ 플러그인은 얇게 유지한다. 커맨드 5 · 에이전트 4 · 스킬 2 · hook 3. 새 구성요소를 늘리기 전에 Claude Code 기본 기능으로 되는지 먼저 본다 (v2 framework 11 phase · 14 skill · 15 페르소나 재발 방지).
+→ 플러그인은 얇게 유지한다. 커맨드 7 · 에이전트 8 · 스킬 3 · hook 3. 새 구성요소를 늘리기 전에 Claude Code 기본 기능으로 되는지 먼저 본다 (v2 framework 11 phase · 14 skill · 15 페르소나 재발 방지).
 
 ---
 
 ## 사용자 호칭
 
-`assets/template/CLAUDE.md` 가 "사용자 = 대표님" 으로 치환한다. `agents/*` · `skills/feature-orchestration` · `.harness/*` 는 도구 중립이라 "사용자" 라고만 쓴다 (`verify-plugin.sh` [9] 가 강제).
+`assets/template/CLAUDE.md` 가 "사용자 = 대표님" 으로 치환한다. `agents/*` · `skills/feature-orchestration` · `skills/next-proposals` · `.harness/*` 는 도구 중립이라 "사용자" 라고만 쓴다 (`verify-plugin.sh` [9] 가 강제).
 
 → 호칭/톤 변경은 `assets/template/CLAUDE.md` 의 "공통 — 사용자 호칭 / 톤" 섹션에서만 한다.
 
@@ -33,7 +37,7 @@
 
 ## 기본 기술 스택 (factory 디폴트)
 
-명시적 다른 지시 없으면 이 조합으로 진행한다. 비전 인터뷰 8번째 질문에서 override 가능.
+명시적 다른 지시 없으면 이 조합으로 진행한다. 비전 인터뷰 8번 질문에서 override 가능.
 
 | 영역 | 기본 |
 |------|------|
@@ -52,15 +56,17 @@
 ```
 js-ralph/
   .claude-plugin/plugin.json, marketplace.json
-  commands/        setup-harness · feature · resume · pause · status
-  agents/          planner · builder · reviewer(읽기 전용) · curator
-  skills/          vision-intake · feature-orchestration
+  commands/        setup-harness · next · pick · feature · resume · pause · status
+  agents/          제안: lens-user · lens-expert · lens-maker (읽기 전용) · synthesizer
+                   구현: planner · builder · reviewer (읽기 전용) · curator
+  skills/          vision-intake · next-proposals · feature-orchestration
   hooks/           hooks.json · session-context.sh · stop-guard.sh · protect-files.sh
   scripts/         setup-harness.sh (설치 본체) · verify-plugin.sh (정적 검증)
   assets/template/ 하네스 원본 — CLAUDE.md · README.md · VERSION(=4) · .gitignore
-                   .harness/{verify.sh, verify.d/, bin/harness.sh, memory/MEMORY.md, features/}
+                   .harness/{verify.sh, verify.d/, bin/harness.sh, memory/MEMORY.md, features/,
+                             config.json, FOCUS.md}
                    .claude/{settings.json, skills/}
-  tests/           bats (setup · harness CLI · hooks · verify 게이트 · 플러그인)
+  tests/           bats (setup · harness CLI · 제안/품질 · hooks · verify 게이트 · 플러그인)
   docs/            v2 framework historical + 의사결정 기록 (보존)
 ```
 
@@ -71,7 +77,8 @@ hook 은 `${CLAUDE_PLUGIN_ROOT}/assets/template/.harness/bin/harness.sh` 를 호
 ## 작업 시 주의 (플러그인 유지보수자용)
 
 1. **`assets/template/CLAUDE.md` 는 자가완결** — 설치 후 이 저장소를 참조할 수 없다. 작동 방식 / 호칭 / 스택 변경 시 같이 갱신.
-2. **TREE.md 노드 줄 형식을 바꾸면** `harness.sh` 파서 · `agents/planner.md` 예시 · `tests/harness-cli.bats` 를 같이 바꾼다.
+2. **파싱되는 형식 세 가지** — TREE.md 노드 줄, CARDS.md 카드 헤더(`## C<n> [시야] 제목`), CLAUDE.md 품질 기준 줄(`- Q-<n> [측정|판단] …`).
+   바꾸면 `harness.sh` 파서 · 해당 에이전트/스킬 예시 · 테스트를 같이 바꾼다.
 3. **변경 후 `bash scripts/verify-plugin.sh` 와 `bats tests/`** 둘 다 통과해야 commit 한다.
 4. **큰 설계 변경은 `docs/features/<날짜>-<이름>/design.md`** 에 결정과 이유를 남긴다.
 5. **`docs/`** 의 v2 framework 시절 자료와 plugin 전환 기록은 historical 로 보존. 갈아엎지 마라.

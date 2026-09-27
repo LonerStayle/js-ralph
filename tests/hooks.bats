@@ -184,3 +184,36 @@ decision() { # 빈 출력 = 허용
     [ "$(decision "$output")" = "allow" ] || { echo "denied: $c"; return 1; }
   done
 }
+
+# ---------------- 제안 · 설정 보호 ----------------
+
+@test "protect: proposal.json 직접 수정 차단, config.json 은 동결 후 차단" {
+  install_harness
+  run pre_hook Write "{\"file_path\":\"$PWD/.harness/proposal.json\"}"
+  [ "$(decision "$output")" = "deny" ]
+  run pre_hook Edit "{\"file_path\":\"$PWD/.harness/config.json\"}"
+  [ "$(decision "$output")" = "allow" ]
+  freeze_vision
+  run pre_hook Edit "{\"file_path\":\"$PWD/.harness/config.json\"}"
+  [ "$(decision "$output")" = "deny" ]
+  run pre_hook Bash '{"command":"echo {} > .harness/config.json"}'
+  [ "$(decision "$output")" = "deny" ]
+  run pre_hook Edit "{\"file_path\":\"$PWD/.harness/FOCUS.md\"}"
+  [ "$(decision "$output")" = "allow" ]
+}
+
+@test "session: 제안 대기 중이면 카드 재안내 + 타이머 재시작 지시" {
+  install_harness; freeze_vision
+  d=$(harness proposal new); printf '## C1 [사용자] a\n' > "$d/CARDS.md"; harness proposal open "$d"
+  run session_hook resume
+  ctx=$(printf '%s' "$output" | jq -r .hookSpecificOutput.additionalContext)
+  [[ "$ctx" =~ "proposal wait" ]]
+}
+
+@test "session: 세션이 끊긴 사이 기한이 지났으면 timeout 처리 지시" {
+  install_harness; freeze_vision
+  d=$(harness proposal new); printf '## C1 [만드는 사람] a\n' > "$d/CARDS.md"; harness proposal open "$d"
+  jq '.deadline = 0' .harness/proposal.json > p.tmp && mv p.tmp .harness/proposal.json
+  run session_hook startup
+  [[ "$(printf '%s' "$output" | jq -r .hookSpecificOutput.additionalContext)" =~ "proposal timeout" ]]
+}

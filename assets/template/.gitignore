@@ -32,3 +32,5 @@ node_modules/
 .harness/run.json
 .harness/.run.*
 .harness/.tree.*
+.harness/proposal.json
+.harness/.prop.*
