@@ -13,6 +13,7 @@
 #   - 의존 순환 (STUCK)             → status=blocked
 #   - max_continuations 도달        → status=paused
 #   - 연속 STALL_LIMIT 회 진척 없음  → status=blocked (헛돌기 방지)
+#   - 서브에이전트 실행 중           → 정체로 세지 않고 그냥 허용 (완료 알림이 세션을 깨움)
 
 set -uo pipefail
 
@@ -42,6 +43,13 @@ if [ -z "$OWNER" ] && [ -n "$SID" ]; then
   upd --arg s "$SID" '.session_id = $s'
 elif [ -n "$OWNER" ] && [ -n "$SID" ] && [ "$OWNER" != "$SID" ]; then
   exit 0
+fi
+
+# 서브에이전트가 돌고 있으면 기다리는 중이다 — 정체로 세지 않고 종료를 허용한다 (완료 알림이 세션을 다시 깨운다)
+STALE_MIN="${HARNESS_AGENT_STALE_MIN:-90}"
+if [ -f .harness/agents.active ]; then
+  ACTIVE=$(awk -v now="$(date +%s)" -v lim="$((STALE_MIN * 60))" 'NF >= 2 && now - $2 < lim' .harness/agents.active | wc -l | tr -d ' ')
+  [ "$ACTIVE" -gt 0 ] && exit 0
 fi
 
 NEXT=$(h next 2>/dev/null) || allow "[harness] 트리를 읽지 못해 가드를 해제합니다 (run.json / TREE.md 확인 필요)."

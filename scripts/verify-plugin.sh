@@ -50,10 +50,10 @@ done
 
 echo; echo "[5] hooks"
 need hooks/hooks.json
-for ev in SessionStart Stop PreToolUse; do
+for ev in SessionStart Stop PreToolUse SubagentStart SubagentStop; do
   jq -e ".hooks.$ev" "$ROOT/hooks/hooks.json" >/dev/null 2>&1 && pass "hooks.json $ev" || fail "hooks.json $ev 미등록"
 done
-for h in session-context stop-guard protect-files; do
+for h in session-context stop-guard protect-files subagent-track; do
   f="$ROOT/hooks/$h.sh"
   [ -x "$f" ] && pass "$h.sh +x" || fail "$h.sh not executable"
   bash -n "$f" 2>/dev/null || fail "$h.sh 문법 오류"

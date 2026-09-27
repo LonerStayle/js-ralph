@@ -248,3 +248,35 @@ decision() { # 빈 출력 = 허용
   stop_hook s1 >/dev/null
   [ "$(jq -r .stall_count .harness/run.json)" = "0" ]
 }
+
+# ---------------- 서브에이전트 추적 ----------------
+
+track() { jq -n --arg c "$PWD" --arg id "$2" '{cwd: $c, agent_id: $id, agent_type: "js-ralph:builder"}' | bash "$PLUGIN_ROOT/hooks/subagent-track.sh" "$1"; }
+
+@test "subagent: 실행 중이면 Stop 가드가 정체로 세지 않고 조용히 허용, 끝나면 다시 가드" {
+  install_harness; sample_feature login; harness start login
+  git add -A && git commit -qm plan
+  stop_hook s1 >/dev/null
+  track start a1
+  for i in 1 2 3 4; do run stop_hook s1; [ -z "$output" ]; done
+  [ "$(jq -r .stall_count .harness/run.json)" = "0" ]
+  [ "$(jq -r .status .harness/run.json)" = "running" ]
+  track stop a1
+  run stop_hook s1
+  [ "$(printf '%s' "$output" | jq -r .decision)" = "block" ]
+}
+
+@test "subagent: 같은 id 는 하나만 지우고, 오래된 기록은 무시" {
+  install_harness; sample_feature login; harness start login
+  track start a1; track start a2; track stop a1
+  [ "$(wc -l < .harness/agents.active | tr -d ' ')" = "1" ]
+  track stop a2
+  echo "old $(( $(date +%s) - 6000 ))" > .harness/agents.active
+  run stop_hook s1
+  [ "$(printf '%s' "$output" | jq -r .decision)" = "block" ]
+}
+
+@test "subagent: 하네스 없으면 no-op" {
+  run track start a1
+  [ ! -e .harness/agents.active ]
+}

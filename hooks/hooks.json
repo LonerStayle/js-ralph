@@ -1,18 +1,24 @@
 {
-  "description": "js-ralph 롱러닝 하네스 — 방향 복원(SessionStart) / 실행 가드(Stop) / 합격 기준 보호(PreToolUse). .harness/ 가 없는 디렉토리에서는 전부 no-op.",
+  "description": "js-ralph 롱러닝 하네스 — 방향 복원(SessionStart) / 실행 가드(Stop) / 합격 기준 보호(PreToolUse) / 서브에이전트 추적(SubagentStart·Stop). .harness/ 가 없는 디렉토리에서는 전부 no-op.",
   "hooks": {
     "SessionStart": [
       {
         "matcher": "startup|resume|clear|compact",
         "hooks": [
-          { "type": "command", "command": "bash \"${CLAUDE_PLUGIN_ROOT}/hooks/session-context.sh\"" }
+          {
+            "type": "command",
+            "command": "bash \"${CLAUDE_PLUGIN_ROOT}/hooks/session-context.sh\""
+          }
         ]
       }
     ],
     "Stop": [
       {
         "hooks": [
-          { "type": "command", "command": "bash \"${CLAUDE_PLUGIN_ROOT}/hooks/stop-guard.sh\"" }
+          {
+            "type": "command",
+            "command": "bash \"${CLAUDE_PLUGIN_ROOT}/hooks/stop-guard.sh\""
+          }
         ]
       }
     ],
@@ -20,7 +26,30 @@
       {
         "matcher": "Edit|MultiEdit|Write|NotebookEdit|Bash",
         "hooks": [
-          { "type": "command", "command": "bash \"${CLAUDE_PLUGIN_ROOT}/hooks/protect-files.sh\"" }
+          {
+            "type": "command",
+            "command": "bash \"${CLAUDE_PLUGIN_ROOT}/hooks/protect-files.sh\""
+          }
+        ]
+      }
+    ],
+    "SubagentStart": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bash \"${CLAUDE_PLUGIN_ROOT}/hooks/subagent-track.sh\" start"
+          }
+        ]
+      }
+    ],
+    "SubagentStop": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bash \"${CLAUDE_PLUGIN_ROOT}/hooks/subagent-track.sh\" stop"
+          }
         ]
       }
     ]

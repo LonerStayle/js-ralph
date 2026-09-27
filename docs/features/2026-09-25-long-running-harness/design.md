@@ -135,3 +135,6 @@ feature 마감 (또는 /next, 또는 비전 동결 직후)
   또 blocked 를 오케스트레이터가 스스로 resume.
 - 수정: 서브에이전트는 포그라운드(`run_in_background: false`) 호출 · 진척 지문에 커밋 전 작업(수정 · 새 파일 내용) 포함 ·
   가드가 멈춘 실행은 사용자 `/resume` 전까지 자가 재개 금지.
+- 재개 후 결과: 노드 6/6 완료 · verify PASS · 자가 재개 없음(규칙 준수). 그러나 지시에도 불구하고 reviewer 를 백그라운드로 띄워 같은 오판 재발.
+  → 지시문 대신 결정적 방법으로 교체: SubagentStart/SubagentStop hook 이 `.harness/agents.active` 에 실행 중 서브에이전트를 기록,
+  Stop 가드는 목록이 비어 있지 않으면 정체로 세지 않고 종료를 허용 (완료 알림이 세션을 깨움). 90분 넘은 기록은 무시.
